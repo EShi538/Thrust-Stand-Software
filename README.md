@@ -1,4 +1,4 @@
 This is the code for the thrust stand. Make sure the slave and master files are in seperate project folders because they need to be connected to different COM channels. 
 
 If you choose to use Arduino IDE to develop the code, only download the .cpp files in the src files of each project folder and remove the #include <Arduino.h> statement at the top of each program. 
-If you choose to use PlatformIO to develop the code, clone the repository on your local device and open the projects to your workspace one by one THROUGH PlatformIO's home page. If you open it normally, platformIO will not initiate for the project files and the code will not compile. 
+If you choose to use PlatformIO to develop the code, clone the repository on your local device and open each project folder within the cloned folder to your workspace one by one THROUGH PlatformIO's home page. If you open the project files normally (i.e. directly using VS code or VS code's built in version control system), platformIO will not initiate for the project files and the code will not compile. You can tell that you opened the project folders wrong if the included libraries are not recognized by the IDE.
