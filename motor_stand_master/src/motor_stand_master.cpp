@@ -57,7 +57,7 @@ int pwm_increment;
 int cycle_length;
 
 bool increment_done;
-bool start_motor; //tells the program to start throttling up the motor
+bool start_motor; //tells the program to start throttling up the motor in increments
 bool done_throttling;
 bool throttling_up;
 bool interrupted;
