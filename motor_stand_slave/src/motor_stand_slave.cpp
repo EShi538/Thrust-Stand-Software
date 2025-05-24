@@ -14,12 +14,7 @@ const int VOLTAGE_PIN = A3;
 const int CURRENT_SENSITIVITY = 0.020;
 const int CURRENT_SENSITIVITY_NEW =  0.022;
 const int ZERO_CURRENT_VOLTAGE = 0.22;
-
-float KNOWN_TORQUE = 1.0; //change this to update zeroing settings
-//TODO: Use i2C to send knwon torque parameter form master to the slave
-// by adding a 'q' character before the other numbers in the signal to send
-// this way, the slave knows that it is recieving a knwon torque parameter signal 
-// by seeing that the signal starts iwth a q character
+float KNOWN_TORQUE;
 
 // CALIBRATION DEFINITIONS
 
