@@ -211,6 +211,8 @@ void setup() {
   esc.attach(ESC_PIN); //set esc to pin
   esc.writeMicroseconds(MIN_THROTTLE); //minimum throttle; arm the esc
   delay(ARMING_DELAY);
+  
+  Serial.println("READY");
 }
 
 void loop() {
@@ -220,10 +222,13 @@ void loop() {
   if(!tared){
     //TODO: get torque/RPM data from slave with Wire.request
     if(key && key == CONFIRM_TARE){ //the button to zero the values
+      Serial.println("CALIBRATING...");
       Wire.beginTransmission(9);
       Wire.write('z');
       Wire.endTransmission();
       tared = true;
+      delay(2000);
+      Serial.println("DONE CALIBRATING");
       lcd_home(); //reset display to its normal "home" state
     }
   }

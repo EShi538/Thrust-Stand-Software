@@ -15,7 +15,7 @@ const int CURRENT_SENSITIVITY = 0.020;
 const int CURRENT_SENSITIVITY_NEW =  0.022;
 const int ZERO_CURRENT_VOLTAGE = 0.22;
 
-const int KNOWN_TORQUE = 1; //change this to update zeroing settings
+const float KNOWN_TORQUE = 1.0; //change this to update zeroing settings
 //TODO: Use i2C to send knwon torque parameter form master to the slave
 // by adding a 'q' character before the other numbers in the signal to send
 // this way, the slave knows that it is recieving a knwon torque parameter signal 
@@ -126,10 +126,18 @@ void init_LoadCell () {
 
 void calibrate(){
   Serial.println("Calibrating torque sensor");
-  if(TorqueSensor.update()){
-    float raw = TorqueSensor.getData();
-    TorqueSensor.setCalFactor(raw / KNOWN_TORQUE);
+  long start_time = millis();
+  float average_raw = 0;
+  float samples = 0;
+  while(millis() < start_time + 2000){
+    if(TorqueSensor.update()){
+      samples++;
+      average_raw += TorqueSensor.getData();
+      Serial.println(average_raw);
+    }
   }
+  average_raw = average_raw / samples;
+  TorqueSensor.setCalFactor(average_raw / KNOWN_TORQUE);
   Serial.println("Done calibrating torque sensor");
 }
 
