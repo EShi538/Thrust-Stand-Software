@@ -15,7 +15,7 @@ const int CURRENT_SENSITIVITY = 0.020;
 const int CURRENT_SENSITIVITY_NEW =  0.022;
 const int ZERO_CURRENT_VOLTAGE = 0.22;
 
-const float KNOWN_TORQUE = 1.0; //change this to update zeroing settings
+float KNOWN_TORQUE = 1.0; //change this to update zeroing settings
 //TODO: Use i2C to send knwon torque parameter form master to the slave
 // by adding a 'q' character before the other numbers in the signal to send
 // this way, the slave knows that it is recieving a knwon torque parameter signal 
@@ -56,6 +56,7 @@ File data_file;
 bool reading_on;
 bool stop;
 bool new_file_created;
+bool marker_sent;
 bool zero;
 bool taring;
 
@@ -63,7 +64,7 @@ bool taring;
 //LOAD CELL READING DEFINITIONS
 
 const int RPM_PIN = 2;
-const float MARKERS = 1;
+float MARKERS = 1;
 float RPM;
 float objects;
 long prev_second;
@@ -75,26 +76,30 @@ bool see_object;
 //called when a signal is sent from master
 void receiveEvent(int bytes){ 
   signal = "";
+  char type = Wire.read(); //get first character 
   while (Wire.available()) {  // Loop through all available data
     char c = Wire.read();  // Read a byte
     signal += c;  // Append to the string
   }
 
-  if(signal == "b"){ // START data collection
+  if(type == 'f'){ //write to flie
+    new_file_created = true;
+  }
+  else if(type == 'm'){ //set marker
+    marker_sent = true;
+  }
+  else if(type == 'z'){ //zero
+    zero = true;
+  }
+  else if(type == 'b'){ // START data collection
     reading_on = true;
   }
-  else if(signal == "e"){ // STOP data collection
+  else if(type == 'e'){ // STOP data collection
     stop = true;
     reading_on = false;
   }
-  else if(signal == "t"){
+  else if(type == 't'){ // turn on taring mode
     taring = true;
-  }
-  else if(signal == "z"){
-    zero = true;
-  }
-  else{ //write to file
-    new_file_created = true;
   }
 }
 
@@ -133,7 +138,7 @@ void calibrate(){
     if(TorqueSensor.update()){
       samples++;
       average_raw += TorqueSensor.getData();
-      Serial.println(average_raw);
+      Serial.println(String(average_raw) + " " + String(KNOWN_TORQUE));
     }
   }
   average_raw = average_raw / samples;
@@ -149,6 +154,7 @@ void setup(){
   reading_on = false;
   stop = false;
   new_file_created = false;
+  marker_sent = false;
   zero = false;
   taring = false;
   RPM = 0;
@@ -181,6 +187,7 @@ void setup(){
 void loop(){
   if(taring){
     if(zero){ 
+      KNOWN_TORQUE = signal.toInt();
       calibrate();
       zero = false;
       taring = false;
@@ -192,6 +199,10 @@ void loop(){
       data_file = SD.open(file_name, FILE_WRITE); //create the file
       data_file.println("Current, Raw Current, Voltage, Raw Voltage, Torque, RPM"); //set up csv headers
       new_file_created = false;
+    }
+    else if(marker_sent){
+      MARKERS = signal.toInt();
+      marker_sent = false;
     }
 
     if(data_file){
