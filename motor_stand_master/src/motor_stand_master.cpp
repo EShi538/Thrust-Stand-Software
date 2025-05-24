@@ -22,7 +22,6 @@ const byte ROWS = 4; // rows
 const byte COLS = 4; // columns
 
 //change these values to change keymapping for starting data collection, stopping data collection, entering test number, and sending test number
-const char START_INPUT = 'A'; 
 const char BACK_BUTTON = 'D';
 const char ENTER_INPUT = '#';
 const char SEND_INPUT = '*';
