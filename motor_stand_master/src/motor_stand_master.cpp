@@ -304,31 +304,33 @@ void loop() {
       else if(key == SEND_INPUT && all_entered()){
         send_inputs();
       }
-      switch(parameter_index){
-        case 0: //ENTERING TEST NUMBER/FILE INFO
-          if(key >= '0' && key <= '9' && input.length() < 3){ 
-            input += key;
-            lcd.print(key);
-          }
-          break;
-        case 1: //ENTERING MAX THROTTLE
-          if(key >= '0' && key <= '9' && input.length() < 4){ 
-            input += key;
-            lcd.print(key);
-          }
-          break;
-        case 2: //ENTERING INCREMENT
-          if(key >= '0' && key <= '9' && input.length() < 2){ 
-            input += key;
-            lcd.print(key);
-          }
-          break;
-        case 3: //ENTERING MARKERS
-          if(key >= '0' && key <= '9' && input.length() < 2){ 
-            input += key;
-            lcd.print(key);
-          }
-          break;
+      else if(key >= '0' && key <= '9'){
+        switch(parameter_index){
+          case 0: //ENTERING TEST NUMBER/FILE INFO
+            if(input.length() < 3){ 
+              input += key;
+              lcd.print(key);
+            }
+            break;
+          case 1: //ENTERING MAX THROTTLE
+            if(input.length() < 4){ 
+              input += key;
+              lcd.print(key);
+            }
+            break;
+          case 2: //ENTERING INCREMENT
+            if(input.length() < 2){ 
+              input += key;
+              lcd.print(key);
+            }
+            break;
+          case 3: //ENTERING MARKERS
+            if(input.length() < 2){ 
+              input += key;
+              lcd.print(key);
+            }
+            break;
+        }
       }
     }
   }
