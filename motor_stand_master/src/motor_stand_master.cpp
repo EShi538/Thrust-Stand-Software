@@ -10,18 +10,23 @@
 LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 20 chars and 4 line display
 
 ////////////////////////////////////////////////////////////////////////////////////////
-//KEYPAD AND I/O DEFINITIONS
+//I/O DEFINITIONS
+
 const int PARAMETER_NUM = 4;
 const String parameter_names[] = {"TEST #:", "MAX THROTTLE:", "INCREMENT:", "MARKERS:"};
 String parameter_values[PARAMETER_NUM];
 int parameter_index;
-String input;
 
-//KEYBOARD INPUT (4x4 Membrane keypad):
+String input;
+String file_num;
+
+////////////////////////////////////////////////////////////////////////////////////////
+//KEYBOARD INITIALIZATION (4x4 Membrane keypad)
+
 const byte ROWS = 4; // rows
 const byte COLS = 4; // columns
 
-//change these values to change keymapping for starting data collection, stopping data collection, entering test number, and sending test number
+//Non-digit keybindings
 const char BACK_BUTTON = 'D';
 const char ENTER_INPUT = '#';
 const char SEND_INPUT = '*';
@@ -34,45 +39,46 @@ char keys[ROWS][COLS] = {
   {'*', '0', '#', 'D'}
 };
 
+//Define pins
 byte rowPins[ROWS] = {10, 11, 12, 13};
 byte colPins[COLS] = {6, 7, 8, 9};
 
+//Initialize the keypad object
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
-String file_num;
-bool input_done;
-bool file_created;
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //THROTTLE LOGIC DEFINITIONS
-/*
-For HARGRAVE MICRODRIVE LP. Accepted PWM frequencies are from 50Hz to 499 Hz
-*/
+//(For a HARGRAVE MICRODRIVE ESC, accepted PWM frequencies range from 50Hz to 499 Hz
+
 Servo esc; 
 
-const int ESC_PIN = 3;
 const int MIN_THROTTLE = 1000;
-int MAX_THROTTLE = 2000;
+int MAX_THROTTLE;
+
+const int ESC_PIN = 3;
 const int ARMING_DELAY = 2000;
 const int INCREMENT_TIME = 4000;
+const int THROTTLE_UP_DELAY = 10;
 
-String increment_input;
 int throttleIncrement;
 int currthrottle;
 int pwm_increment;
 int cycle_length;
 
-bool start_motor; //tells the program to start throttling up the motor in increments
+bool start_motor; 
 bool done_throttling;
 bool throttling_up;
-bool interrupted;
+
 long prev_interval_timestamp;
 
-const int THROTTLE_UP_DELAY = 10;
+////////////////////////////////////////////////////////////////////////////////////////
+//MANUAL OVERRIDE DEFINITIONS
 
 const int INTERRUPT_PIN = 2;
-const int ARM_PIN = 1;
+bool interrupted;
 
 ////////////////////////////////////////////////////////////////////////////////////////
+//TARING LOGIC
 
 bool tared = false; //only reset taring status after the entire system has been unpowered/restarted
 
@@ -217,7 +223,6 @@ void send_inputs(){
 
 void setup() {
   pinMode(INTERRUPT_PIN, INPUT_PULLUP); //set default switch position to HIGH
-  pinMode(ARM_PIN, INPUT);
   attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), interrupt, FALLING); //when switch is pressed down
 
   for(int i = 0; i < PARAMETER_NUM; i++){
