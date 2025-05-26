@@ -4,59 +4,17 @@
 #include <HX711_ADC.h>   
                           
 ///////////////////////////////////////////////////////////////////////////////////////
-// DEFINITIONS
+// TORQUE SENSOR DEFINITIONS
 
 const int TORQUE_DOUT_PIN = 5;    // mcu > hx711 data out pin
 const int TORQUE_SCK_PIN = 6;   // mcu > hx711 serial clock pin
 
-const int CURRENT_PIN = A2;
-const int VOLTAGE_PIN = A3;
-const int CURRENT_SENSITIVITY = 0.020;
-const int CURRENT_SENSITIVITY_NEW =  0.022;
-const int ZERO_CURRENT_VOLTAGE = 0.22;
-float KNOWN_TORQUE;
-
-// CALIBRATION DEFINITIONS
-
-#define MANUAL_TORQUE_CALIBRATION_VALUE 1.0     // manual torque calibration value (float)
-
-#define SERIAL_PRINT_INTERVAL 300.0      // interval between each printed value
-
-///////////////////////////////////////////////////////////////////////////////////////
-// CONSTRUCTORS
-///////////////////////////////////////////////////////////////////////////////////////
+float KNOWN_TORQUE; //for taring
 
 HX711_ADC TorqueSensor(TORQUE_DOUT_PIN, TORQUE_SCK_PIN);
 
-///////////////////////////////////////////////////////////////////////////////////////
-// VARIABLE INSTANTIATIONS
-///////////////////////////////////////////////////////////////////////////////////////
-
-// GENERAL VARIABLES
-unsigned long last_serial_timestamp = 0;
-
-// CALIBRATION VARIABLES
-boolean bool_tare_next;
-
-float thrust_calibration_value;
-float torque_calibration_value;
-
-///////////////////////////////////////////////////////////////////////////////////////
-//INPUT AND WRITING DEFINITIONS
-
-const int SD_PIN = 10; //change this to change the SD card pin number
-String signal;
-
-File data_file; 
-bool reading_on;
-bool stop;
-bool new_file_created;
-bool marker_sent;
-bool zero;
-bool taring;
-
 ////////////////////////////////////////////////////////////////////////////////////////
-//LOAD CELL READING DEFINITIONS
+//RPM/TACHOMETER SENSOR DEFINITIONS
 
 const int RPM_PIN = 2;
 float MARKERS = 1;
@@ -64,6 +22,35 @@ float RPM;
 float objects;
 long prev_second;
 bool see_object;
+
+///////////////////////////////////////////////////////////////////////////////////////
+// CURRENT AND VOLTAGE SENSOR DEFINITIONS
+
+const int CURRENT_PIN = A2;
+const int VOLTAGE_PIN = A3;
+const int CURRENT_SENSITIVITY = 0.020;
+const int CURRENT_SENSITIVITY_NEW =  0.022;
+const int ZERO_CURRENT_VOLTAGE = 0.22;
+
+///////////////////////////////////////////////////////////////////////////////////////
+// TIMING VARIABLE DEFINITIONS (FOR TRACKING)
+
+const int SERIAL_PRINT_INTERVAL = 300;      // interval between each printed value to not overload the serial monitor
+unsigned long last_serial_timestamp = 0;
+
+///////////////////////////////////////////////////////////////////////////////////////
+//PARAMETER I2C RECIEVER AND SD CARD WRITING DEFINITIONS
+
+const int SD_PIN = 10; //change this to change the SD card pin number
+
+String signal;
+File data_file; 
+bool reading_on;
+bool stop;
+bool new_file_created;
+bool marker_sent;
+bool zero;
+bool taring;
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //HELPER FUNCTIONS
