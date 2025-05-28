@@ -285,10 +285,10 @@ void send_tare_inputs(){
     lcd.print("CALIBRATING...");
 
     send_torque();
-    delay(1000);
+    delay(100);
 
     send_thrust();
-    delay(1000);
+    delay(100);
 
     start_zero();
 
