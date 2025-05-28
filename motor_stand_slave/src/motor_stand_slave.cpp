@@ -2,13 +2,24 @@
 #include <Wire.h>
 #include <SD.h>
 #include <HX711_ADC.h>   
-                          
+ 
+///////////////////////////////////////////////////////////////////////////////////////
+//THRUST SENSOR DEFINITIONS
+const int THRUST_DOUT_PIN = 3;
+const int THRUST_SCK_PIN = 4;
+
+String thrust_signal;
+float KNOWN_THRUST;
+
+HX711_ADC ThrustSensor(THRUST_DOUT_PIN, THRUST_SCK_PIN);
+
 ///////////////////////////////////////////////////////////////////////////////////////
 // TORQUE SENSOR DEFINITIONS
 
 const int TORQUE_DOUT_PIN = 5;    // mcu > hx711 data out pin
 const int TORQUE_SCK_PIN = 6;   // mcu > hx711 serial clock pin
 
+String torque_signal;
 float KNOWN_TORQUE; //for taring
 
 HX711_ADC TorqueSensor(TORQUE_DOUT_PIN, TORQUE_SCK_PIN);
@@ -70,6 +81,12 @@ void receiveEvent(int bytes){
   else if(type == 'm'){ //set marker
     marker_sent = true;
   }
+  else if(type == 'q'){ //torque
+    torque_signal = signal;
+  }
+  else if(type == 'r'){ //thrust
+    thrust_signal = signal;
+  }
   else if(type == 'z'){ //zero
     zero = true;
   }
@@ -98,34 +115,70 @@ void increment(){
 
 // Initializes Load Cell
 void init_LoadCell () {
-  Serial.println("Initializing the HX711 . . .");
+  Serial.println(F("Initializing the HX711 . . ."));
 
   TorqueSensor.begin();
+  ThrustSensor.begin();
+  
   boolean _tare = true; //set this to false if you don't want tare to be performed in the next step
   TorqueSensor.start(2000, _tare); //tare for 2 seconds
+  ThrustSensor.start(2000, _tare);
+
   if (TorqueSensor.getTareTimeoutFlag() || TorqueSensor.getSignalTimeoutFlag()) {
-    Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
+    Serial.println(F("Torque Sensor Timeout, check MCU>HX711 wiring and pin designations"));
+    while (1);
+  }
+  
+  if (ThrustSensor.getTareTimeoutFlag() || ThrustSensor.getSignalTimeoutFlag()) {
+    Serial.println(F("Thrust Sensor Timeout, check MCU>HX711 wiring and pin designations"));
     while (1);
   }
 
-  Serial.println("Done initializing HX711");
+  Serial.println(F("Done initializing HX711"));
 }
 
 void calibrate(){
-  Serial.println("Calibrating torque sensor");
+  Serial.println(F("Calibrating sensors"));
+  Serial.println(F("Calibrating torque sensor"));
   long start_time = millis();
   float average_raw = 0;
   float samples = 0;
   while(millis() < start_time + 2000){
     if(TorqueSensor.update()){
       samples++;
-      average_raw += TorqueSensor.getData();
-      Serial.println(String(average_raw) + " " + String(KNOWN_TORQUE));
+      float torque = TorqueSensor.getData();
+      average_raw += torque;
+
+      Serial.print(F("READING: "));
+      Serial.print(torque);
+      Serial.print(F(" KNOWN: "));
+      Serial.println(KNOWN_TORQUE);
     }
   }
   average_raw = average_raw / samples;
   TorqueSensor.setCalFactor(average_raw / KNOWN_TORQUE);
-  Serial.println("Done calibrating torque sensor");
+  Serial.println(F("Done calibrating torque sensor"));
+
+  Serial.println(F("Calibrating thrust sensor"));
+  start_time = millis();
+  average_raw = 0;
+  samples = 0;
+  while(millis() < start_time + 2000){
+    if(ThrustSensor.update()){
+      samples++;
+      float thrust = ThrustSensor.getData();
+      average_raw += thrust;
+
+      Serial.print(F("READING: "));
+      Serial.print(thrust);
+      Serial.print(F(" KNOWN: "));
+      Serial.println(KNOWN_THRUST);
+    }
+  }
+  average_raw = average_raw / samples;
+  ThrustSensor.setCalFactor(average_raw / KNOWN_THRUST);
+  Serial.println(F("Done Calibrating thrust sensor"));
+  Serial.println(F("Done calibrating sensors"));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -154,22 +207,29 @@ void setup(){
 
   //Initialize Serial
   Serial.begin(57600);
-  Serial.println("Setting up");
+  Serial.println(F("Setting up"));
 
   init_LoadCell(); //initialze the load cell
 
   //Initialize SD card; If no file is attached or something else goes wrong, 
   //the code put itself in an infinite loop
   if (!SD.begin(SD_PIN)) {
-    Serial.println("Failed to initialize SD card");
+    Serial.println(F("Failed to initialize SD card"));
     while(1); //infinite loop to prevent further looping by loop()
   }
+}
+
+extern int __heap_start, *__brkval;
+int free_memory() {
+  int v;
+  return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
 }
 
 void loop(){
   if(taring){
     if(zero){ 
-      KNOWN_TORQUE = signal.toInt();
+      KNOWN_TORQUE = torque_signal.toInt();
+      KNOWN_THRUST = thrust_signal.toInt();
       calibrate();
       zero = false;
       taring = false;
@@ -179,7 +239,7 @@ void loop(){
     if(new_file_created){ //create a new file
       String file_name = "Test_" + signal + ".csv";
       data_file = SD.open(file_name, FILE_WRITE); //create the file
-      data_file.println("Current, Raw Current, Voltage, Raw Voltage, Torque, RPM"); //set up csv headers
+      data_file.println("Current, Voltage, Torque, Thrust, RPM"); //set up csv headers
       new_file_created = false;
     }
     else if(marker_sent){
@@ -196,7 +256,7 @@ void loop(){
           prev_second = millis();
         }
         
-        if(TorqueSensor.update()){
+        if(TorqueSensor.update() && ThrustSensor.update()){
           //read in current and voltage
           int current_value_in = analogRead(CURRENT_PIN);
           int voltage_value_in = analogRead(VOLTAGE_PIN);
@@ -209,12 +269,30 @@ void loop(){
           float current = (current_voltage - ZERO_CURRENT_VOLTAGE) / CURRENT_SENSITIVITY;
           
           if(millis() > last_serial_timestamp + SERIAL_PRINT_INTERVAL){     
-            float torque_data = TorqueSensor.getData();    
+            float torque_data = TorqueSensor.getData();  
+            float thrust_data = ThrustSensor.getData();  
             last_serial_timestamp = millis();
 
-            Serial.println("Current: " + String(current, 4) + " | Voltage: " + String(voltage, 4) + " | Torque: " +  String(torque_data) + " | RPM: " + String(RPM));
-            
-            data_file.println(String(current) + ", " + String(current_value_in) + ", " + String(voltage) + ", " + String(voltage_value_in) + ", " + String(torque_data) + ", " + String(RPM)); 
+            Serial.print(F("Current: "));
+            Serial.print(current);
+            Serial.print(F(" | Voltage: ")); 
+            Serial.print(voltage);
+            Serial.print(F(" | Torque: "));
+            Serial.print(torque_data);
+            Serial.print(F("| Thrust: "));
+            Serial.print(thrust_data);
+            Serial.print(F(" | RPM: "));
+            Serial.println(RPM);
+
+            data_file.print(current);
+            data_file.print(", "); 
+            data_file.print(voltage);
+            data_file.print(", ");
+            data_file.print(torque_data);
+            data_file.print(", ");
+            data_file.print(thrust_data);
+            data_file.print(", ");
+            data_file.println(RPM);
             data_file.flush();
           }
         }
