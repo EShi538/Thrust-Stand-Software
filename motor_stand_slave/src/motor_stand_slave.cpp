@@ -4,7 +4,17 @@
 #include <HX711_ADC.h>   
  
 ///////////////////////////////////////////////////////////////////////////////////////
+//AIRSPEED SENSOR DEFINITIONS
+
+const int sensorPin = A0;          // Analog pin connected to sensor output
+const float Vcc = 5.0;             // MODIFY THIS VALUE TO MATCH WITH 5V PIN VOLTAGE
+const float zeroVoltage = 2.5;     // MODIFY THIS VALUE TO CORRESPOND TO VOLTAGE WITHOUT ANY AIRFLOW
+const float sensitivity = 1;     // Sensor sensitivity in V/kPa
+const float airDensity = 1.2;    // Air density at sea level in kg/m^3
+
+///////////////////////////////////////////////////////////////////////////////////////
 //THRUST SENSOR DEFINITIONS
+
 const int THRUST_DOUT_PIN = 3;
 const int THRUST_SCK_PIN = 4;
 
@@ -239,7 +249,7 @@ void loop(){
     if(new_file_created){ //create a new file
       String file_name = "Test_" + signal + ".csv";
       data_file = SD.open(file_name, FILE_WRITE); //create the file
-      data_file.println("Current, Voltage, Torque, Thrust, RPM"); //set up csv headers
+      data_file.println("Current, Voltage, Torque, Thrust, RPM, Airspeed"); //set up csv headers
       new_file_created = false;
     }
     else if(marker_sent){
@@ -249,6 +259,7 @@ void loop(){
 
     if(data_file){
       if(reading_on){ //if a file exists and data logging/testing is turned on
+        //RPM SENSOR READING
         //calculate RPM; Can increase precision by adding more markers
         if(millis() >= prev_second + 1000){
           RPM = (objects / MARKERS) * 60.0;
@@ -257,17 +268,28 @@ void loop(){
         }
         
         if(TorqueSensor.update() && ThrustSensor.update()){
+          //CURRENT/VOLTAGE SENSOR READING
           //read in current and voltage
           int current_value_in = analogRead(CURRENT_PIN);
-          int voltage_value_in = analogRead(VOLTAGE_PIN);
+          int voltage_value_in = analogRead(VOLTAGE_PIN);          
 
-          // Calculate the voltage, this is for a 5V Arduino, is that what we have?
           float voltage = (21 * voltage_value_in);
 
-          // Calculate current
           float current_voltage = current_value_in * (5.0 / 1024.0);
           float current = (current_voltage - ZERO_CURRENT_VOLTAGE) / CURRENT_SENSITIVITY;
-          
+
+          //AIRSPEED SENSOR READING
+          int raw = analogRead(sensorPin);
+          float voltage = raw * Vcc / 1023.0;
+
+          float pressure_kPa = (voltage - zeroVoltage) / sensitivity; // Convert voltage to differential pressure in kPa
+          float pressure_Pa = pressure_kPa * 1000.0; // Convert kPa to Pascals
+
+          float airspeed = 0.0;          
+          if (pressure_Pa > 0) {
+            airspeed = sqrt((2.0 * pressure_Pa) / airDensity); // Compute airspeed using Bernoulli equation
+          }
+
           if(millis() > last_serial_timestamp + SERIAL_PRINT_INTERVAL){     
             float torque_data = TorqueSensor.getData();  
             float thrust_data = ThrustSensor.getData();  
@@ -282,7 +304,9 @@ void loop(){
             Serial.print(F("| Thrust: "));
             Serial.print(thrust_data);
             Serial.print(F(" | RPM: "));
-            Serial.println(RPM);
+            Serial.print(RPM);
+            Serial.print(F(" | AIRSPEED: "));
+            Serial.println(airspeed);
 
             data_file.print(current);
             data_file.print(", "); 
@@ -292,7 +316,9 @@ void loop(){
             data_file.print(", ");
             data_file.print(thrust_data);
             data_file.print(", ");
-            data_file.println(RPM);
+            data_file.print(RPM);
+            data_file.print(", ");
+            data_file.println(airspeed);
             data_file.flush();
           }
         }
