@@ -268,7 +268,7 @@ void start_zero(){
   Wire.write('z');
   Wire.endTransmission();
   tared = true;
-  delay(7000);
+  delay(9000);
 }
 
 void setup_tare_mode(){

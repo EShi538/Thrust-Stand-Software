@@ -51,7 +51,7 @@ const int CURRENT_PIN = A2;
 const int VOLTAGE_PIN = A3;
 const int CURRENT_SENSITIVITY = 0.020;
 const int CURRENT_SENSITIVITY_NEW =  0.022;
-const int ZERO_CURRENT_VOLTAGE = 0.22;
+int ZERO_CURRENT_VOLTAGE = 0.22;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // TIMING VARIABLE DEFINITIONS (FOR TRACKING)
@@ -205,6 +205,24 @@ void calibrate(){
   average_raw = average_raw / samples;
   zeroVoltage = average_raw;
   Serial.println(F("Done zeroing airspeed sensor"));
+
+  Serial.println(F("Zeroing the current sensor"));
+  start_time = millis();
+  average_raw = 0;
+  samples = 0;
+  while(millis() < start_time + 2000){
+    samples++;
+    float current_voltage = analogRead(CURRENT_PIN) * (Vcc / 1023);
+    average_raw += current_voltage ;
+    
+    Serial.print(F("READING: "));
+    Serial.print(current_voltage);
+    Serial.println(F(" KNOWN: 0"));
+  }
+  average_raw = average_raw / samples;
+  ZERO_CURRENT_VOLTAGE = average_raw;
+  Serial.println(F("Done zeroing current sensor"));
+
   Serial.println(F("Done calibrating sensors"));
 }
 
