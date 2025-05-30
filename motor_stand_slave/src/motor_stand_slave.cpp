@@ -122,6 +122,43 @@ void increment(){
   }
 }
 
+float zero_analog(float (*func)()){
+  long start_time = millis();
+  float average_raw = 0;
+  float samples = 0;
+  while(millis() < start_time + 2000){
+    samples++;
+    float reading = func();
+    average_raw += reading;
+
+    Serial.print(F("READING: "));
+    Serial.print(reading);
+    Serial.print(F(" KNOWN: 0"));    
+  }
+  average_raw = average_raw / samples;
+  return average_raw;
+}
+
+void calibrate_hx711(HX711_ADC load_cell, float known){
+  long start_time = millis();
+  float average_raw = 0;
+  float samples = 0;
+  while(millis() < start_time + 2000){
+    if(load_cell.update()){
+      samples++;
+      float reading = load_cell.getData();
+      average_raw += reading;
+
+      Serial.print(F("READING: "));
+      Serial.print(reading);
+      Serial.print(F(" KNOWN: "));
+      Serial.println(known);
+    }
+  }
+  average_raw = average_raw / samples;
+  load_cell.setCalFactor(average_raw / known);
+}
+
 // Initializes Load Cell
 void init_LoadCell () {
   Serial.println(F("Initializing the HX711 . . ."));
@@ -148,83 +185,30 @@ void init_LoadCell () {
 
 void calibrate(){
   Serial.println(F("Calibrating sensors"));
-  Serial.println(F("Calibrating torque sensor"));
-  long start_time = millis();
-  float average_raw = 0;
-  float samples = 0;
-  while(millis() < start_time + 2000){
-    if(TorqueSensor.update()){
-      samples++;
-      float torque = TorqueSensor.getData();
-      average_raw += torque;
 
-      Serial.print(F("READING: "));
-      Serial.print(torque);
-      Serial.print(F(" KNOWN: "));
-      Serial.println(KNOWN_TORQUE);
-    }
-  }
-  average_raw = average_raw / samples;
-  TorqueSensor.setCalFactor(average_raw / KNOWN_TORQUE);
+  Serial.println(F("Calibrating torque sensor"));
+  calibrate_hx711(TorqueSensor, KNOWN_TORQUE);
   Serial.println(F("Done calibrating torque sensor"));
 
   Serial.println(F("Calibrating thrust sensor"));
-  start_time = millis();
-  average_raw = 0;
-  samples = 0;
-  while(millis() < start_time + 2000){
-    if(ThrustSensor.update()){
-      samples++;
-      float thrust = ThrustSensor.getData();
-      average_raw += thrust;
-
-      Serial.print(F("READING: "));
-      Serial.print(thrust);
-      Serial.print(F(" KNOWN: "));
-      Serial.println(KNOWN_THRUST);
-    }
-  }
-  average_raw = average_raw / samples;
-  ThrustSensor.setCalFactor(average_raw / KNOWN_THRUST);
+  calibrate_hx711(ThrustSensor, KNOWN_THRUST);
   Serial.println(F("Done Calibrating thrust sensor"));
 
   Serial.println(F("Zeroing the airspeed sensor"));
-  start_time = millis();
-  average_raw = 0;
-  samples = 0;
-  while(millis() < start_time + 2000){
-    samples++;
-    float airspeed_voltage = analogRead(AIRSPEED_PIN) * (Vcc / 1023);
-    average_raw += airspeed_voltage;
-    
-    Serial.print(F("READING: "));
-    Serial.print(airspeed_voltage);
-    Serial.println(F(" KNOWN: 0"));
-    delay(5);
-  }
-  average_raw = average_raw / samples;
-  zeroVoltage = average_raw;
+  zeroVoltage = zero_analog([]() {return analogRead(AIRSPEED_PIN) * (Vcc / 1023);});
   Serial.println(F("Done zeroing airspeed sensor"));
 
   Serial.println(F("Zeroing the current sensor"));
-  start_time = millis();
-  average_raw = 0;
-  samples = 0;
-  while(millis() < start_time + 2000){
-    samples++;
-    float current_voltage = analogRead(CURRENT_PIN) * (Vcc / 1023);
-    average_raw += current_voltage ;
-    
-    Serial.print(F("READING: "));
-    Serial.print(current_voltage);
-    Serial.println(F(" KNOWN: 0"));
-    delay(5);
-  }
-  average_raw = average_raw / samples;
-  ZERO_CURRENT_VOLTAGE = average_raw;
+  ZERO_CURRENT_VOLTAGE = zero_analog([]() {return analogRead(CURRENT_PIN) * (Vcc / 1023);});
   Serial.println(F("Done zeroing current sensor"));
 
   Serial.println(F("Done calibrating sensors"));
+}
+
+extern int __heap_start, *__brkval;
+int free_memory() {
+  int v;
+  return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -254,6 +238,8 @@ void setup(){
   //Initialize Serial
   Serial.begin(57600);
   Serial.println(F("Setting up"));
+  Serial.print(F("Free RAM (in bytes): "));
+  Serial.println(free_memory());
 
   init_LoadCell(); //initialze the load cell
 
@@ -263,12 +249,6 @@ void setup(){
     Serial.println(F("Failed to initialize SD card"));
     while(1); //infinite loop to prevent further looping by loop()
   }
-}
-
-extern int __heap_start, *__brkval;
-int free_memory() {
-  int v;
-  return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
 }
 
 void loop(){
