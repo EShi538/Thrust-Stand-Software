@@ -23,7 +23,6 @@ String tare_values[TARE_NUM];
 int tare_index;
 
 String input;
-String file_num;
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //KEYBOARD INITIALIZATION (4x4 Membrane keypad)
@@ -126,23 +125,15 @@ void start_tare(){
   Wire.endTransmission();
 }
 
-void send_file(){
-  file_num = parameter_values[0];
-  String signal = "f" + parameter_values[0];
-  Wire.beginTransmission(9);
-  Wire.write(signal.c_str());
-  Wire.endTransmission();
-}
-
-void send_markers(){
-  String signal = "m" + parameter_values[3];
+void send_parameters(String type, String value){
+  String signal = type + value;
   Wire.beginTransmission(9);
   Wire.write(signal.c_str());
   Wire.endTransmission();
 }
 
 void start_testing(){
-  Serial.println("Starting: Test Num: " + file_num + " | Increment: " + String(throttleIncrement));
+  Serial.println("Starting: Test Num: " + parameter_values[0] + " | Increment: " + String(throttleIncrement));
   start_motor = true;
   Wire.beginTransmission(9);
   Wire.write('b');
@@ -231,36 +222,13 @@ void setup_prev_tare_input(){
   tare_ui();
 }
 
-bool all_entered(){
-  for(int i = 0; i < PARAMETER_NUM; i++){
-    if(parameter_values[i] == ""){
+bool all_entered(String array[], int length){
+  for(int i = 0; i < length; i++){
+    if(array[i] == ""){
       return false;
     }
   }
   return true;
-}
-
-bool all_entered_tare(){
-  for(int i = 0; i < TARE_NUM; i++){
-    if(tare_values[i] == ""){
-      return false;
-    }
-  }
-  return true;
-}
-
-void send_torque(){
-  String signal = "q" + tare_values[0];
-  Wire.beginTransmission(9);
-  Wire.write(signal.c_str());
-  Wire.endTransmission();
-}
-
-void send_thrust(){
-  String signal = "r" + tare_values[1];
-  Wire.beginTransmission(9);
-  Wire.write(signal.c_str());
-  Wire.endTransmission();
 }
 
 void start_zero(){
@@ -284,10 +252,10 @@ void send_tare_inputs(){
     lcd.setCursor(0, 1);
     lcd.print("CALIBRATING...");
 
-    send_torque();
+    send_parameters("q", tare_values[0]); //send torque information
     delay(100);
 
-    send_thrust();
+    send_parameters("r", tare_values[1]); //send thrust information
     delay(100);
 
     start_zero();
@@ -298,7 +266,7 @@ void send_tare_inputs(){
 }
 
 void send_inputs(){
-  send_file();
+  send_parameters("f", parameter_values[0]);
   delay(100);
 
   MAX_THROTTLE = min(max(parameter_values[1].toInt(), 1000), 2000);
@@ -306,7 +274,7 @@ void send_inputs(){
   throttleIncrement = parameter_values[2].toInt();
   pwm_increment = map(throttleIncrement, 0, 100, 0, MAX_THROTTLE - MIN_THROTTLE); //1% -> 99% written in terms of PWM cycle length, assuming a linear mapping
 
-  send_markers();
+  send_parameters("m", parameter_values[3]);
   
   Serial.println("TEST PARAMETERS CONFIRMED");
   start_testing();
@@ -374,7 +342,7 @@ void loop() {
       else if(key == BACK_BUTTON){
         setup_prev_tare_input();
       }
-      else if(key == SEND_INPUT && all_entered_tare()){ //the button to zero the values
+      else if(key == SEND_INPUT && all_entered(tare_values, TARE_NUM)){ //the button to zero the values
         send_tare_inputs();
       }
     }
@@ -396,7 +364,7 @@ void loop() {
       else if(key == ENTER_INPUT && input != ""){
         setup_next_input();
       }
-      else if(key == SEND_INPUT && all_entered()){
+      else if(key == SEND_INPUT && all_entered(parameter_values, PARAMETER_NUM)){
         send_inputs();
       }
       else if(key >= '0' && key <= '9'){
