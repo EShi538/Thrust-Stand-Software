@@ -6,9 +6,9 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 //AIRSPEED SENSOR DEFINITIONS
 
-const int sensorPin = A0;          // Analog pin connected to sensor output
+const int AIRSPEED_PIN = A0;          // Analog pin connected to sensor output
 const float Vcc = 5.0;             // MODIFY THIS VALUE TO MATCH WITH 5V PIN VOLTAGE
-const float zeroVoltage = 2.5;     // MODIFY THIS VALUE TO CORRESPOND TO VOLTAGE WITHOUT ANY AIRFLOW
+float zeroVoltage = 2.7;     // MODIFY THIS VALUE TO CORRESPOND TO VOLTAGE WITHOUT ANY AIRFLOW
 const float sensitivity = 1;     // Sensor sensitivity in V/kPa
 const float airDensity = 1.2;    // Air density at sea level in kg/m^3
 
@@ -188,6 +188,23 @@ void calibrate(){
   average_raw = average_raw / samples;
   ThrustSensor.setCalFactor(average_raw / KNOWN_THRUST);
   Serial.println(F("Done Calibrating thrust sensor"));
+
+  Serial.println(F("Zeroing the airspeed sensor"));
+  start_time = millis();
+  average_raw = 0;
+  samples = 0;
+  while(millis() < start_time + 2000){
+    samples++;
+    float airspeed_voltage = analogRead(AIRSPEED_PIN) * (Vcc / 1023);
+    average_raw += airspeed_voltage;
+    
+    Serial.print(F("READING: "));
+    Serial.print(airspeed_voltage);
+    Serial.println(F(" KNOWN: 0"));
+  }
+  average_raw = average_raw / samples;
+  zeroVoltage = average_raw;
+  Serial.println(F("Done zeroing airspeed sensor"));
   Serial.println(F("Done calibrating sensors"));
 }
 
@@ -275,14 +292,14 @@ void loop(){
 
           float voltage = (21 * voltage_value_in);
 
-          float current_voltage = current_value_in * (5.0 / 1024.0);
+          float current_voltage = current_value_in * (Vcc / 1023.0);
           float current = (current_voltage - ZERO_CURRENT_VOLTAGE) / CURRENT_SENSITIVITY;
 
           //AIRSPEED SENSOR READING
-          int raw = analogRead(sensorPin);
-          float voltage = raw * Vcc / 1023.0;
+          int raw = analogRead(AIRSPEED_PIN);
+          float airspeed_voltage = raw * (Vcc / 1023.0);
 
-          float pressure_kPa = (voltage - zeroVoltage) / sensitivity; // Convert voltage to differential pressure in kPa
+          float pressure_kPa = (airspeed_voltage - zeroVoltage) / sensitivity; // Convert voltage to differential pressure in kPa
           float pressure_Pa = pressure_kPa * 1000.0; // Convert kPa to Pascals
 
           float airspeed = 0.0;          
