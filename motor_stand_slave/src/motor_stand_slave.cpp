@@ -201,6 +201,7 @@ void calibrate(){
     Serial.print(F("READING: "));
     Serial.print(airspeed_voltage);
     Serial.println(F(" KNOWN: 0"));
+    delay(5);
   }
   average_raw = average_raw / samples;
   zeroVoltage = average_raw;
@@ -218,6 +219,7 @@ void calibrate(){
     Serial.print(F("READING: "));
     Serial.print(current_voltage);
     Serial.println(F(" KNOWN: 0"));
+    delay(5);
   }
   average_raw = average_raw / samples;
   ZERO_CURRENT_VOLTAGE = average_raw;
