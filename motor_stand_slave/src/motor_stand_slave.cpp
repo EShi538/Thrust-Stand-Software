@@ -311,29 +311,18 @@ void loop(){
             float thrust_data = ThrustSensor.getData();  
             last_serial_timestamp = millis();
 
-            Serial.print(F("Current: "));
-            Serial.print(current);
-            Serial.print(F(" | Voltage: ")); 
-            Serial.print(voltage);
-            Serial.print(F(" | Torque: "));
-            Serial.print(torque_data);
-            Serial.print(F("| Thrust: "));
-            Serial.print(thrust_data);
-            Serial.print(F(" | RPM: "));
-            Serial.print(RPM);
-            Serial.print(F(" | AIRSPEED: "));
-            Serial.println(airspeed);
+            Serial.print(F("Current: ")); Serial.print(current);
+            Serial.print(F(" | Voltage: ")); Serial.print(voltage);
+            Serial.print(F(" | Torque: ")); Serial.print(torque_data);
+            Serial.print(F("| Thrust: ")); Serial.print(thrust_data);
+            Serial.print(F(" | RPM: ")); Serial.print(RPM);
+            Serial.print(F(" | AIRSPEED: ")); Serial.println(airspeed);
 
-            data_file.print(current);
-            data_file.print(", "); 
-            data_file.print(voltage);
-            data_file.print(", ");
-            data_file.print(torque_data);
-            data_file.print(", ");
-            data_file.print(thrust_data);
-            data_file.print(", ");
-            data_file.print(RPM);
-            data_file.print(", ");
+            data_file.print(current); data_file.print(", "); 
+            data_file.print(voltage); data_file.print(", ");
+            data_file.print(torque_data); data_file.print(", ");
+            data_file.print(thrust_data); data_file.print(", ");
+            data_file.print(RPM); data_file.print(", ");
             data_file.println(airspeed);
             data_file.flush();
           }
