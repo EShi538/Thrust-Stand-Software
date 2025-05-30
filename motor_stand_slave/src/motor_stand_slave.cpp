@@ -50,7 +50,6 @@ bool see_object;
 const int CURRENT_PIN = A2;
 const int VOLTAGE_PIN = A3;
 const int CURRENT_SENSITIVITY = 0.020;
-const int CURRENT_SENSITIVITY_NEW =  0.022;
 int ZERO_CURRENT_VOLTAGE = 0.22;
 
 ///////////////////////////////////////////////////////////////////////////////////////
