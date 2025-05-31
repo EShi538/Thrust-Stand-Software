@@ -45,8 +45,8 @@ char keys[ROWS][COLS] = {
 };
 
 //Define pins
-byte rowPins[ROWS] = {10, 11, 12, 13};
-byte colPins[COLS] = {6, 7, 8, 9};
+byte rowPins[ROWS] = {9, 10, 11, 12};
+byte colPins[COLS] = {5, 6, 7, 8};
 
 //Initialize the keypad object
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);

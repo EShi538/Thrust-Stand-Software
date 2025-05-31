@@ -133,7 +133,8 @@ float zero_analog(float (*func)()){
 
     Serial.print(F("READING: "));
     Serial.print(reading);
-    Serial.print(F(" KNOWN: 0"));    
+    Serial.println(F(" KNOWN: 0"));   
+    delay(5); 
   }
   average_raw = average_raw / samples;
   return average_raw;
