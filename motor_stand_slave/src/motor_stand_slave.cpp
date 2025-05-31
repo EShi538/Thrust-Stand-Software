@@ -140,7 +140,7 @@ float zero_analog(float (*func)()){
   return average_raw;
 }
 
-void calibrate_hx711(HX711_ADC load_cell, float known){
+void calibrate_hx711(HX711_ADC& load_cell, float known){
   long start_time = millis();
   float average_raw = 0;
   float samples = 0;
