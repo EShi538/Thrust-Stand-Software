@@ -244,7 +244,7 @@ void setup() {
 void loop() {
   check_interrupt();
   char key = keypad.getKey();
-
+  
   if(!tared){
     if(key){
       if(key >= '0' && key <= '9' && input.length() < 2){
