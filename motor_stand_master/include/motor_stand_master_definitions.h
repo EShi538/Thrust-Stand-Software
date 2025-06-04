@@ -20,6 +20,7 @@ int parameter_index;
 
 bool tared = false; //only reset taring status after the entire system has been unpowered/restarted
 bool sending; 
+bool choosing;
 const int TARE_NUM = 2;
 const String tare_names[] = {"KNOWN TORQUE:", "KNOWN THRUST:"};
 String tare_values[TARE_NUM];

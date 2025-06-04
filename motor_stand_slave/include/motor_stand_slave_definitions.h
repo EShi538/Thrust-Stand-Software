@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <SD.h>
 #include <HX711_ADC.h>   
+#include <EEPROM.h>
  
 ///////////////////////////////////////////////////////////////////////////////////////
 //AIRSPEED SENSOR DEFINITIONS
@@ -71,5 +72,6 @@ bool new_file_created;
 bool marker_sent;
 bool zero_torque;
 bool zero_thrust;
+bool use_prev_calibration;
 
 ///////////////////////////////////////////////////////////////////////////////////////

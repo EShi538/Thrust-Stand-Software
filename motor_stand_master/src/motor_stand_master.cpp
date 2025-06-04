@@ -115,14 +115,6 @@ void setup_prev_input(){
   lcd_home();
 }
 
-void setup_tare_mode(){
-  Serial.println("ENTERING TARE MODE");
-  tare_index = 0;
-  tared = false;
-  sending = false;
-  tare_ui();
-}
-
 void send_inputs(){
   send_parameters("f", parameter_values[0]);
   delay(100);
@@ -174,8 +166,14 @@ void setup() {
   esc.writeMicroseconds(MIN_THROTTLE); //minimum throttle; arm the esc
   
   Serial.println("READY");
+
   if(!tared){
-    setup_tare_mode();
+    lcd.print("USE PREVIOUS TARE?");
+    lcd.print("YES: A | NO: B");
+    tare_index = 0;
+    tared = false;
+    sending = false;
+    choosing = true;
   }
   else{
     lcd_home();
@@ -188,39 +186,54 @@ void loop() {
   
   if(!tared){
     if(key){
-      if(!sending){
-        if(key >= '0' && key <= '9' && input.length() < 9){
-          input += key;
-          lcd.print(key);
-        }   
-        else if(key == ENTER_INPUT && input != "" && tare_index < TARE_NUM){
-          tare_values[tare_index] = input;
-          input = "";
-          send_ui();
-          sending = true;
+      if(!choosing){
+        if(!sending){
+          if(key >= '0' && key <= '9' && input.length() < 9){
+            input += key;
+            lcd.print(key);
+          }   
+          else if(key == ENTER_INPUT && input != "" && tare_index < TARE_NUM){
+            tare_values[tare_index] = input;
+            input = "";
+            send_ui();
+            sending = true;
+          }
+        }
+        else{
+          if(key == BACK_BUTTON && tare_index > 0){
+            tare_ui();
+          }
+          else if(key == SEND_INPUT){ //the button to zero the values
+            lcd.setCursor(0, 1);
+            lcd.println("CALIBRATING...");
+            if(tare_index == 0){
+              send_parameters("q", tare_values[tare_index]); //tell slave to tare torque
+              delay(2500);
+              tare_index++;
+              tare_ui();
+            }
+            else if(tare_index == 1){
+              send_parameters("r", tare_values[tare_index]); //tell slave to tare thrust
+              delay(2500);
+              lcd_home();
+              tared = true;
+            }
+            sending = false;
+          }
         }
       }
       else{
-        if(key == BACK_BUTTON && tare_index > 0){
+        if(key == 'A'){
+          Wire.beginTransmission(9);
+          Wire.write('p');
+          Wire.endTransmission();
+          choosing = false;
           tare_ui();
         }
-        else if(key == SEND_INPUT){ //the button to zero the values
-          lcd.setCursor(0, 1);
-          lcd.println("CALIBRATING...");
-          if(tare_index == 0){
-            send_parameters("q", tare_values[tare_index]); //tell slave to tare torque
-            delay(2500);
-            tare_index++;
-            tare_ui();
-          }
-          else if(tare_index == 1){
-            send_parameters("r", tare_values[tare_index]); //tell slave to tare thrust
-            delay(2500);
-            lcd_home();
-            tared = true;
-          }
+        else if(key == 'B'){
+          choosing = false;
+          tare_ui();
         }
-        sending = false;
       }
     }
   }
