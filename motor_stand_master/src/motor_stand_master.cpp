@@ -252,7 +252,7 @@ void loop() {
         input += key;
         lcd.print(key);
       }   
-      else if(key == ENTER_INPUT && input != ""){
+      else if(key == ENTER_INPUT && input != "" && tare_index < TARE_NUM){
         setup_next_tare_input();
       }
       else if(key == BACK_BUTTON && tare_index > 0){
@@ -277,7 +277,7 @@ void loop() {
       if(key == BACK_BUTTON && parameter_index > 0){
         setup_prev_input();
       }
-      else if(key == ENTER_INPUT && input != ""){
+      else if(key == ENTER_INPUT && input != "" && parameter_index < PARAMETER_NUM){
         setup_next_input();
       }
       else if(key == SEND_INPUT && all_entered(parameter_values, PARAMETER_NUM)){
