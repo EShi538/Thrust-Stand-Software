@@ -6,38 +6,34 @@
 
 void lcd_home(){
   input = "";
-  lcd.setCursor(0, 3);
-  lcd.print("THROTTLE:OFF");
-  lcd.setCursor(0, 0);
-  lcd.print("                    ");
+  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(parameter_names[parameter_index] + parameter_values[parameter_index]);
-  lcd.setCursor(0, 1);
-  lcd.print("                    ");
   lcd.setCursor(0, 2);
   lcd.print("NEXT: " +  String(ENTER_INPUT) + " | BACK: " + String(BACK_BUTTON) + "   ");
+  lcd.setCursor(0, 3);
+  lcd.print("THROTTLE:OFF");
   lcd.setCursor(0, 1);
 }
 
 void tare_ui(){
   input = "";
+  lcd.clear();
+  lcd.print(tare_names[tare_index] + tare_values[tare_index]);
+  lcd.setCursor(0, 2);
+  lcd.print("NEXT: " +  String(ENTER_INPUT) + "             ");
   lcd.setCursor(0, 3);
   lcd.print("THROTTLE:OFF");
-  lcd.setCursor(0, 0);
-  lcd.print("                    ");
-  lcd.setCursor(0, 0);
-  lcd.print(tare_names[tare_index] + tare_values[tare_index]);
-  lcd.setCursor(0, 1);
-  lcd.print("                    ");
-  lcd.setCursor(0, 2);
-  lcd.print("NEXT: " +  String(ENTER_INPUT) + " | BACK: " + String(BACK_BUTTON) + "   ");
   lcd.setCursor(0, 1);
 }
 
-void start_tare(){
-  Wire.beginTransmission(9);
-  Wire.write('t');
-  Wire.endTransmission();
+void send_ui(){
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("PRESS " + String(SEND_INPUT) + " TO TARE");
+  lcd.setCursor(0, 3);
+  lcd.print("NEXT: " +  String(ENTER_INPUT) + " | BACK: " + String(BACK_BUTTON) + "   ");
+  lcd.setCursor(0, 1);
 }
 
 void send_parameters(String type, String value){
@@ -119,65 +115,12 @@ void setup_prev_input(){
   lcd_home();
 }
 
-void setup_next_tare_input(){
-  tare_values[tare_index] = input;
-  tare_index++;
-  if(tare_index >= TARE_NUM){
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("PRESS " + String(SEND_INPUT) + " TO ZERO");
-  }
-  else{
-    tare_ui();
-  }
-}
-
-void setup_prev_tare_input(){
-  tare_index--;
-  tare_ui();
-}
-
-bool all_entered(String array[], int length){
-  for(int i = 0; i < length; i++){
-    if(array[i] == ""){
-      return false;
-    }
-  }
-  return true;
-}
-
-void start_zero(){
-  Wire.beginTransmission(9);
-  Wire.write('z');
-  Wire.endTransmission();
-  tared = true;
-  delay(9000);
-}
-
 void setup_tare_mode(){
   Serial.println("ENTERING TARE MODE");
   tare_index = 0;
   tared = false;
+  sending = false;
   tare_ui();
-  start_tare();
-}
-
-void send_tare_inputs(){
-    Serial.println("CALIBRATING...");
-    lcd.setCursor(0, 1);
-    lcd.print("CALIBRATING...");
-
-    send_parameters("q", tare_values[0]); //send torque information
-    delay(100);
-
-    send_parameters("r", tare_values[1]); //send thrust information
-    delay(100);
-
-    start_zero();
-
-    Serial.println("DONE CALIBRATING");
-    Serial.println("EXITING TARE MODE");
-    lcd_home(); //reset display to its normal "home" state
 }
 
 void send_inputs(){
@@ -221,9 +164,7 @@ void setup() {
   //Initialize Serial 
   Serial.begin(9600);
   Serial.println("Setting up");
-  delay(3000); //account for delay on the slave for load cell initialization/taring
-  //DO NOT LOAD THE TORQUE SENSOR UNTIL LCD SCREEN TURNS ON
-  //LOADING THE LOAD CELL WHILE THE PROGRAM INITIALIZES IT WILL RESULT IN INACCURATE READINGS
+  delay(10000); //account for delay on the slave for load cell initialization/taring
 
   //Initialize I2C protocol (master)
   Wire.begin();
@@ -231,7 +172,6 @@ void setup() {
   //Initialize servo PWM and arm the ESC
   esc.attach(ESC_PIN); //set esc to pin
   esc.writeMicroseconds(MIN_THROTTLE); //minimum throttle; arm the esc
-  delay(ARMING_DELAY);
   
   Serial.println("READY");
   if(!tared){
@@ -248,18 +188,39 @@ void loop() {
   
   if(!tared){
     if(key){
-      if(key >= '0' && key <= '9' && input.length() < 9){
-        input += key;
-        lcd.print(key);
-      }   
-      else if(key == ENTER_INPUT && input != "" && tare_index < TARE_NUM){
-        setup_next_tare_input();
+      if(!sending){
+        if(key >= '0' && key <= '9' && input.length() < 9){
+          input += key;
+          lcd.print(key);
+        }   
+        else if(key == ENTER_INPUT && input != "" && tare_index < TARE_NUM){
+          tare_values[tare_index] = input;
+          input = "";
+          send_ui();
+          sending = true;
+        }
       }
-      else if(key == BACK_BUTTON && tare_index > 0){
-        setup_prev_tare_input();
-      }
-      else if(key == SEND_INPUT && all_entered(tare_values, TARE_NUM)){ //the button to zero the values
-        send_tare_inputs();
+      else{
+        if(key == BACK_BUTTON && tare_index > 0){
+          tare_ui();
+        }
+        else if(key == SEND_INPUT){ //the button to zero the values
+          lcd.setCursor(0, 1);
+          lcd.println("CALIBRATING...");
+          if(tare_index == 0){
+            send_parameters("q", tare_values[tare_index]); //tell slave to tare torque
+            delay(2500);
+            tare_index++;
+            tare_ui();
+          }
+          else if(tare_index == 1){
+            send_parameters("r", tare_values[tare_index]); //tell slave to tare thrust
+            delay(2500);
+            lcd_home();
+            tared = true;
+          }
+        }
+        sending = false;
       }
     }
   }
@@ -280,7 +241,7 @@ void loop() {
       else if(key == ENTER_INPUT && input != "" && parameter_index < PARAMETER_NUM){
         setup_next_input();
       }
-      else if(key == SEND_INPUT && all_entered(parameter_values, PARAMETER_NUM)){
+      else if(key == SEND_INPUT && parameter_index == PARAMETER_NUM){
         send_inputs();
       }
       else if(key >= '0' && key <= '9'){
@@ -314,4 +275,3 @@ void loop() {
     }
   }
 }
-////////////////////////////////////////////////////////////////////////////////////////

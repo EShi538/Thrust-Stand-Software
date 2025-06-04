@@ -12,6 +12,8 @@ LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 20 chars
 ////////////////////////////////////////////////////////////////////////////////////////
 //I/O DEFINITIONS
 
+bool sending; 
+
 const int PARAMETER_NUM = 4;
 const String parameter_names[] = {"TEST #:", "MAX THROTTLE:", "INCREMENT:", "MARKERS:"};
 String parameter_values[PARAMETER_NUM];

@@ -69,7 +69,7 @@ bool reading_on;
 bool stop;
 bool new_file_created;
 bool marker_sent;
-bool zero;
-bool taring;
+bool zero_torque;
+bool zero_thrust;
 
 ///////////////////////////////////////////////////////////////////////////////////////
