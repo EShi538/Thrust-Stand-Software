@@ -248,7 +248,7 @@ void loop() {
   
   if(!tared){
     if(key){
-      if(key >= '0' && key <= '9' && input.length() < 2){
+      if(key >= '0' && key <= '9' && input.length() < 9){
         input += key;
         lcd.print(key);
       }   
@@ -286,25 +286,25 @@ void loop() {
       else if(key >= '0' && key <= '9'){
         switch(parameter_index){
           case 0: //ENTERING TEST NUMBER/FILE INFO
-            if(input.length() < 3){ 
+            if(input.length() < 9){ 
               input += key;
               lcd.print(key);
             }
             break;
           case 1: //ENTERING MAX THROTTLE
-            if(input.length() < 4){ 
+            if(input.length() < 9){ 
               input += key;
               lcd.print(key);
             }
             break;
           case 2: //ENTERING INCREMENT
-            if(input.length() < 2){ 
+            if(input.length() < 9){ 
               input += key;
               lcd.print(key);
             }
             break;
           case 3: //ENTERING MARKERS
-            if(input.length() < 2){ 
+            if(input.length() < 9){ 
               input += key;
               lcd.print(key);
             }
@@ -314,5 +314,4 @@ void loop() {
     }
   }
 }
-
 ////////////////////////////////////////////////////////////////////////////////////////
