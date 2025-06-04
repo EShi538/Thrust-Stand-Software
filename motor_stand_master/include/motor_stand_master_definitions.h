@@ -12,13 +12,14 @@ LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 20 chars
 ////////////////////////////////////////////////////////////////////////////////////////
 //I/O DEFINITIONS
 
-bool sending; 
 
 const int PARAMETER_NUM = 4;
 const String parameter_names[] = {"TEST #:", "MAX THROTTLE:", "INCREMENT:", "MARKERS:"};
 String parameter_values[PARAMETER_NUM];
 int parameter_index;
 
+bool tared = false; //only reset taring status after the entire system has been unpowered/restarted
+bool sending; 
 const int TARE_NUM = 2;
 const String tare_names[] = {"KNOWN TORQUE:", "KNOWN THRUST:"};
 String tare_values[TARE_NUM];
@@ -62,7 +63,6 @@ const int MIN_THROTTLE = 1000;
 int MAX_THROTTLE;
 
 const int ESC_PIN = 3;
-const int ARMING_DELAY = 2000;
 const int INCREMENT_TIME = 4000;
 const int THROTTLE_UP_DELAY = 10;
 
@@ -82,10 +82,3 @@ long prev_interval_timestamp;
 
 const int INTERRUPT_PIN = 2;
 bool interrupted;
-
-////////////////////////////////////////////////////////////////////////////////////////
-//TARING LOGIC
-
-bool tared = false; //only reset taring status after the entire system has been unpowered/restarted
-
-////////////////////////////////////////////////////////////////////////////////////////
