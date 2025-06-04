@@ -255,7 +255,7 @@ void loop() {
       else if(key == ENTER_INPUT && input != ""){
         setup_next_tare_input();
       }
-      else if(key == BACK_BUTTON){
+      else if(key == BACK_BUTTON && tare_index > 0){
         setup_prev_tare_input();
       }
       else if(key == SEND_INPUT && all_entered(tare_values, TARE_NUM)){ //the button to zero the values
@@ -274,7 +274,7 @@ void loop() {
 
     //if a keystroke has been entered from the keypad
     if(key){
-      if(key == BACK_BUTTON){
+      if(key == BACK_BUTTON && parameter_index > 0){
         setup_prev_input();
       }
       else if(key == ENTER_INPUT && input != ""){
