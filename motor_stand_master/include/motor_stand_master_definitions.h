@@ -34,7 +34,6 @@ const byte COLS = 4; // columns
 const char BACK_BUTTON = 'D';
 const char ENTER_INPUT = '#';
 const char SEND_INPUT = '*';
-const char TARE_MODE = 'B';
  
 // Define the keymap
 char keys[ROWS][COLS] = {

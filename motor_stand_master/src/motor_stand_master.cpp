@@ -213,6 +213,7 @@ void setup() {
   start_motor = false;
   cycle_length = MIN_THROTTLE;
   interrupted = false;
+  currthrottle = 0;
   
   // Set up the LCD display
   lcd.init();
@@ -309,9 +310,6 @@ void loop() {
             }
             break;
         }
-      }
-      else if(!start_motor && key == TARE_MODE){
-        setup_tare_mode();
       }
     }
   }
