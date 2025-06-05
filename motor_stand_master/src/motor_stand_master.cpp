@@ -10,7 +10,7 @@ void lcd_home(){
   lcd.setCursor(0, 0);
   lcd.print(parameter_names[parameter_index] + parameter_values[parameter_index]);
   lcd.setCursor(0, 2);
-  lcd.print("NEXT: " +  String(ENTER_INPUT) + " | BACK: " + String(BACK_BUTTON) + "   ");
+  lcd.print("NEXT: " +  String(ENTER_INPUT) + " | BACK: " + String(BACK_BUTTON));
   lcd.setCursor(0, 3);
   lcd.print("THROTTLE:OFF");
   lcd.setCursor(0, 1);
@@ -37,7 +37,7 @@ void send_ui(){
   lcd.setCursor(0, 0);
   lcd.print("PRESS " + String(SEND_INPUT) + " TO TARE");
   lcd.setCursor(0, 3);
-  lcd.print("NEXT: " +  String(ENTER_INPUT) + " | BACK: " + String(BACK_BUTTON) + "   ");
+  lcd.print("BACK: " + String(BACK_BUTTON));
   lcd.setCursor(0, 1);
 }
 
