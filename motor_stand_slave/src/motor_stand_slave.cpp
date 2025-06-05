@@ -219,7 +219,7 @@ void loop(){
   if(new_file_created){ //create a new file
     String file_name = "Test_" + signal + ".csv";
     data_file = SD.open(file_name, FILE_WRITE); //create the file
-    data_file.println("Current, Voltage, Torque, Thrust, RPM, Airspeed"); //set up csv headers
+    data_file.println("Current (A), Voltage (V), Torque (N.m), Thrust (N), RPM, Airspeed (m/s)"); //set up csv headers
     new_file_created = false;
   }
   else if(marker_sent){
