@@ -264,6 +264,7 @@ void loop(){
 
         float current_voltage = current_value_in * (Vcc / 1023.0);
         float current = (current_voltage - ZERO_CURRENT_VOLTAGE) / CURRENT_SENSITIVITY;
+        
         float prev = measurements[0];
         measurements[0] = current;
         for(int i = 1; i < 5; i++){
