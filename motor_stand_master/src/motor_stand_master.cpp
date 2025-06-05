@@ -50,6 +50,10 @@ void send_parameters(String type, String value){
 }
 
 void start_testing(){
+  lcd.setCursor(0, 0);
+  lcd.print("                    ");
+  lcd.setCursor(0, 0);
+  lcd.print("RUNNING TEST");
   Serial.println("Starting: Test Num: " + parameter_values[0] + " | Increment: " + String(throttleIncrement));
   start_motor = true;
   Wire.beginTransmission(9);
