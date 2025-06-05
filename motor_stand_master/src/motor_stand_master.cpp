@@ -27,7 +27,7 @@ void tare_ui(){
     lcd.print("UNITS: N.m");
   }
   else{
-    lcd.print("UNITS: kg");
+    lcd.print("UNITS: N");
   }
   lcd.setCursor(0, 1);
 }
