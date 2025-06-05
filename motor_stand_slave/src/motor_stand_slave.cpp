@@ -56,7 +56,7 @@ void increment(){
 }
 
 float zero_analog(float (*func)(), int address){
-  long start_time = millis();
+  unsigned long start_time = millis();
   float average_raw = 0;
   float samples = 0;
   while(millis() < start_time + 2000){
@@ -75,7 +75,7 @@ float zero_analog(float (*func)(), int address){
 }
 
 void calibrate_hx711(HX711_ADC& load_cell, float known, int address){
-  long start_time = millis();
+  unsigned long start_time = millis();
   float average_raw = 0;
   float samples = 0;
   while(millis() < start_time + 4000){

@@ -42,7 +42,7 @@ const int RPM_PIN = 2;
 float MARKERS;
 float RPM;
 float objects;
-long prev_second;
+unsigned long prev_second;
 bool see_object;
 
 ///////////////////////////////////////////////////////////////////////////////////////

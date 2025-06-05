@@ -76,7 +76,7 @@ bool start_motor;
 bool done_throttling;
 bool throttling_up;
 
-long prev_interval_timestamp;
+unsigned long prev_interval_timestamp;
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //MANUAL OVERRIDE DEFINITIONS
