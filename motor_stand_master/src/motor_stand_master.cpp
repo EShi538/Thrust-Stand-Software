@@ -24,7 +24,7 @@ void tare_ui(){
   lcd.print("NEXT: " +  String(ENTER_INPUT) + "             ");
   lcd.setCursor(0, 3);
   if(tare_index == 0){
-    lcd.print("UNITS: N.m");
+    lcd.print("UNITS: N.mm");
   }
   else{
     lcd.print("UNITS: N");
@@ -43,9 +43,10 @@ void send_ui(){
 
 void send_parameters(String type, String value){
   String signal = type + value;
+  int length = signal.length();
   Serial.println("SENDING: " + signal);
   Wire.beginTransmission(9);
-  Wire.write(signal.c_str());
+  Wire.write(signal.c_str(), length);
   Wire.endTransmission();
 }
 
@@ -294,25 +295,25 @@ void loop() {
       else if(key >= '0' && key <= '9'){
         switch(parameter_index){
           case 0: //ENTERING TEST NUMBER/FILE INFO
-            if(input.length() < 9){ 
+            if(input.length() < 3){ 
               input += key;
               lcd.print(key);
             }
             break;
           case 1: //ENTERING MAX THROTTLE
-            if(input.length() < 9){ 
+            if(input.length() < 4){ 
               input += key;
               lcd.print(key);
             }
             break;
           case 2: //ENTERING INCREMENT
-            if(input.length() < 9){ 
+            if(input.length() < 2){ 
               input += key;
               lcd.print(key);
             }
             break;
           case 3: //ENTERING MARKERS
-            if(input.length() < 9){ 
+            if(input.length() < 2){ 
               input += key;
               lcd.print(key);
             }

@@ -51,7 +51,10 @@ bool see_object;
 const int CURRENT_PIN = A2;
 const int VOLTAGE_PIN = A3;
 const float CURRENT_SENSITIVITY = 0.020;
-float ZERO_CURRENT_VOLTAGE = 0.22;
+float ZERO_CURRENT_VOLTAGE;
+float ZERO_VOLTAGE;
+
+float measurements[5] = {0, 0, 0, 0, 0};
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // TIMING VARIABLE DEFINITIONS (FOR TRACKING)

@@ -20,11 +20,9 @@ void receiveEvent(int bytes){
     marker_sent = true;
   }
   else if(type == 'q'){ //torque
-    torque_signal = signal;
     zero_torque = true;
   }
   else if(type == 'r'){ //thrust
-    thrust_signal = signal;
     zero_thrust = true;
   }
   else if(type == 'p'){
@@ -54,7 +52,7 @@ void increment(){
   }
 }
 
-float zero_analog(float (*func)()){
+float zero_analog(float (*func)(), int address){
   long start_time = millis();
   float average_raw = 0;
   float samples = 0;
@@ -69,6 +67,7 @@ float zero_analog(float (*func)()){
     delay(5); 
   }
   average_raw = average_raw / samples;
+  EEPROM.put(address, average_raw);
   return average_raw;
 }
 
@@ -76,16 +75,18 @@ void calibrate_hx711(HX711_ADC& load_cell, float known, int address){
   long start_time = millis();
   float average_raw = 0;
   float samples = 0;
-  while(millis() < start_time + 2000){
+  while(millis() < start_time + 4000){
     if(load_cell.update()){
-      samples++;
       float reading = load_cell.getData();
-      average_raw += reading;
+      if(millis() > start_time + 2000){
+        samples++;
+        average_raw += reading;
 
-      Serial.print(F("READING: "));
-      Serial.print(reading);
-      Serial.print(F(" KNOWN: "));
-      Serial.println(known);
+        Serial.print(F("READING: "));
+        Serial.print(reading);
+        Serial.print(F(" KNOWN: "));
+        Serial.println(known);
+      }
     }
   }
   average_raw = average_raw / samples;
@@ -137,6 +138,9 @@ void setup(){
   zero_thrust = false;
   RPM = 0;
   ready = false;
+  for(int i = 0; i < 5; i++){
+    measurements[i] = 0;
+  }
 
   pinMode(CURRENT_PIN, INPUT);
   pinMode(VOLTAGE_PIN, INPUT);
@@ -164,15 +168,6 @@ void setup(){
     Serial.println(F("Failed to initialize SD card"));
     while(1); //infinite loop to prevent further looping by loop()
   }
-
-  //Zero analog sensors
-  Serial.println(F("Zeroing the airspeed sensor"));
-  zeroVoltage = zero_analog([]() {return analogRead(AIRSPEED_PIN) * (Vcc / 1023);});
-  Serial.println(F("Done zeroing airspeed sensor"));
-
-  Serial.println(F("Zeroing the current sensor"));
-  ZERO_CURRENT_VOLTAGE = zero_analog([]() {return analogRead(CURRENT_PIN) * (Vcc / 1023);});
-  Serial.println(F("Done zeroing current sensor"));
   ready = true;
 }
 
@@ -192,6 +187,18 @@ void loop(){
     Serial.print(F("Thrust: "));
     Serial.println(String(thrust_calibration_factor));
 
+    EEPROM.get(20, zeroVoltage);
+    Serial.print(F("Airspeed: "));
+    Serial.println(String(zeroVoltage));
+
+    EEPROM.get(30, ZERO_CURRENT_VOLTAGE);
+    Serial.print(F("Current: "));
+    Serial.println(String(ZERO_CURRENT_VOLTAGE));
+
+    EEPROM.get(40, ZERO_VOLTAGE);
+    Serial.print(F("Current: "));
+    Serial.println(String(ZERO_VOLTAGE));
+
     Serial.println(F("Done retrieving calibration factors"));
     use_prev_calibration = false;
   }
@@ -206,20 +213,32 @@ void loop(){
     ready = true;
   }
 
-  if(zero_thrust){
+  if(zero_thrust){ //zero the thrust and the other analog sensors
     ready = false;
     KNOWN_THRUST = signal.toInt();
     Serial.println(F("Calibrating thrust sensor"));
     calibrate_hx711(ThrustSensor, KNOWN_THRUST, 10);
     Serial.println(F("Done Calibrating thrust sensor"));
+
+    Serial.println(F("Zeroing the airspeed sensor"));
+    zeroVoltage = zero_analog([]() {return analogRead(AIRSPEED_PIN) * (Vcc / 1023);}, 20);
+    Serial.println(F("Done zeroing airspeed sensor"));
+
+    Serial.println(F("Zeroing the current sensor"));
+    ZERO_CURRENT_VOLTAGE = zero_analog([]() {return analogRead(CURRENT_PIN) * (Vcc / 1023);}, 30);
+    Serial.println(F("Done zeroing current sensor"));
+
+    Serial.println(F("Zeroing the voltage sensor"));
+    ZERO_VOLTAGE = zero_analog([]() {return analogRead(VOLTAGE_PIN) * (Vcc / 1023);}, 40);
+    Serial.println(F("Done zeroing voltage sensor"));
     zero_thrust = false;
     ready = true;
   }
 
   if(new_file_created){ //create a new file
-    String file_name = "Test_" + signal + ".csv";
+    String file_name = "TEST_" + signal + ".csv";
     data_file = SD.open(file_name, FILE_WRITE); //create the file
-    data_file.println("Current (A), Voltage (V), Torque (N.m), Thrust (N), RPM, Airspeed (m/s)"); //set up csv headers
+    data_file.println("Current (A), Voltage (V), Torque (N.mm), Thrust (N), RPM, Airspeed (m/s)"); //set up csv headers
     new_file_created = false;
   }
   else if(marker_sent){
@@ -241,10 +260,23 @@ void loop(){
         int current_value_in = analogRead(CURRENT_PIN);
         int voltage_value_in = analogRead(VOLTAGE_PIN);          
 
-        float voltage = (21 * voltage_value_in);
+        float voltage = 21 * voltage_value_in * (Vcc / 1023.0);
 
         float current_voltage = current_value_in * (Vcc / 1023.0);
         float current = (current_voltage - ZERO_CURRENT_VOLTAGE) / CURRENT_SENSITIVITY;
+        float prev = measurements[0];
+        measurements[0] = current;
+        for(int i = 1; i < 5; i++){
+          float old = measurements[i];
+          measurements[i] = prev;
+          prev = old;
+        }
+
+        float sum = 0;
+        for(int i = 0; i < 5; i++){
+          sum += measurements[i];
+        }
+        float average_current = sum / 5.0;
 
         //AIRSPEED SENSOR READING
         int raw = analogRead(AIRSPEED_PIN);
@@ -266,14 +298,14 @@ void loop(){
         if(millis() > last_serial_timestamp + SERIAL_PRINT_INTERVAL){     
           last_serial_timestamp = millis();
 
-          Serial.print(F("Current: ")); Serial.print(current);
+          Serial.print(F("Current: ")); Serial.print(average_current);
           Serial.print(F(" | Voltage: ")); Serial.print(voltage);
           Serial.print(F(" | Torque: ")); Serial.print(torque_data);
           Serial.print(F("| Thrust: ")); Serial.print(thrust_data);
           Serial.print(F(" | RPM: ")); Serial.print(RPM);
           Serial.print(F(" | AIRSPEED: ")); Serial.println(airspeed);
 
-          data_file.print(current); data_file.print(", "); 
+          data_file.print(average_current); data_file.print(", "); 
           data_file.print(voltage); data_file.print(", ");
           data_file.print(torque_data); data_file.print(", ");
           data_file.print(thrust_data); data_file.print(", ");
