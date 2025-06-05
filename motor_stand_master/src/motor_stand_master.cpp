@@ -162,7 +162,7 @@ void setup() {
   //Initialize Serial 
   Serial.begin(9600);
   Serial.println("Setting up");
-  delay(10000); //account for delay on the slave for load cell initialization/taring
+  lcd.print("LOADING...");
 
   //Initialize I2C protocol (master)
   Wire.begin();
@@ -170,8 +170,14 @@ void setup() {
   //Initialize servo PWM and arm the ESC
   esc.attach(ESC_PIN); //set esc to pin
   esc.writeMicroseconds(MIN_THROTTLE); //minimum throttle; arm the esc
-  
-  Serial.println("READY");
+
+  while(1){
+    Wire.requestFrom(9, 1);
+    if(Wire.read() == 1){
+      break;
+    }
+    delay(100);
+  }
 
   if(!tared){
     lcd.setCursor(0, 0);
@@ -186,6 +192,7 @@ void setup() {
   else{
     lcd_home();
   }
+  Serial.println("READY");
 }
 
 void loop() {
@@ -217,13 +224,25 @@ void loop() {
             lcd.print("CALIBRATING...");
             if(tare_index == 0){
               send_parameters("q", tare_values[tare_index]); //tell slave to tare torque
-              delay(2500);
+              while(1){
+                Wire.requestFrom(9, 1);
+                if(Wire.read() == 1){
+                  break;
+                }
+                delay(100);
+              }
               tare_index++;
               tare_ui();
             }
             else if(tare_index == 1){
               send_parameters("r", tare_values[tare_index]); //tell slave to tare thrust
-              delay(2500);
+              while(1){
+                Wire.requestFrom(9, 1);
+                if(Wire.read() == 1){
+                  break;
+                }
+                delay(100);
+              }
               lcd_home();
               tared = true;
             }

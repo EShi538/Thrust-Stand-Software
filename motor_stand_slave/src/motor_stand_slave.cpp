@@ -39,6 +39,10 @@ void receiveEvent(int bytes){
   }
 }
 
+void requestEvent(){
+  Wire.write(ready); //tells the master initialization status
+}
+
 void count(){
   see_object = true;
 }
@@ -132,6 +136,7 @@ void setup(){
   zero_torque = false;
   zero_thrust = false;
   RPM = 0;
+  ready = false;
 
   pinMode(CURRENT_PIN, INPUT);
   pinMode(VOLTAGE_PIN, INPUT);
@@ -143,6 +148,7 @@ void setup(){
   //Initialize I2C protocol (slave)
   Wire.begin(9); //Slave arduino set to address 9
   Wire.onReceive(receiveEvent);
+  Wire.onRequest(requestEvent);
 
   //Initialize Serial
   Serial.begin(57600);
@@ -167,6 +173,7 @@ void setup(){
   Serial.println(F("Zeroing the current sensor"));
   ZERO_CURRENT_VOLTAGE = zero_analog([]() {return analogRead(CURRENT_PIN) * (Vcc / 1023);});
   Serial.println(F("Done zeroing current sensor"));
+  ready = true;
 }
 
 void loop(){
@@ -190,19 +197,23 @@ void loop(){
   }
 
   if(zero_torque){
+    ready = false;
     KNOWN_TORQUE = signal.toInt();
     Serial.println(F("Calibrating torque sensor"));
     calibrate_hx711(TorqueSensor, KNOWN_TORQUE, 0);
     Serial.println(F("Done calibrating torque sensor"));
     zero_torque = false;
+    ready = true;
   }
 
   if(zero_thrust){
+    ready = false;
     KNOWN_THRUST = signal.toInt();
     Serial.println(F("Calibrating thrust sensor"));
     calibrate_hx711(ThrustSensor, KNOWN_THRUST, 10);
     Serial.println(F("Done Calibrating thrust sensor"));
     zero_thrust = false;
+    ready = true;
   }
 
   if(new_file_created){ //create a new file

@@ -58,6 +58,7 @@ float ZERO_CURRENT_VOLTAGE = 0.22;
 
 const int SERIAL_PRINT_INTERVAL = 100;      // interval between each printed value to not overload the serial monitor
 unsigned long last_serial_timestamp = 0;
+bool ready;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //PARAMETER I2C RECIEVER AND SD CARD WRITING DEFINITIONS
