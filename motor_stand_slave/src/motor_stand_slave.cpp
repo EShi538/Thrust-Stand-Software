@@ -25,7 +25,10 @@ void receiveEvent(int bytes){
   else if(type == 'r'){ //thrust
     zero_thrust = true;
   }
-  else if(type == 'p'){
+  else if(type == 'a'){ //analog
+    zero_analog_sensors = true;
+  }
+  else if(type == 'p'){ //previous
     use_prev_calibration = true;
   }
   else if(type == 'b'){ // START data collection
@@ -216,10 +219,17 @@ void loop(){
   if(zero_thrust){ //zero the thrust and the other analog sensors
     ready = false;
     KNOWN_THRUST = signal.toInt();
+
     Serial.println(F("Calibrating thrust sensor"));
     calibrate_hx711(ThrustSensor, KNOWN_THRUST, 10);
     Serial.println(F("Done Calibrating thrust sensor"));
 
+    zero_thrust = false;
+    ready = true;
+  }
+
+  if(zero_analog_sensors){
+    ready = false;
     Serial.println(F("Zeroing the airspeed sensor"));
     zeroVoltage = zero_analog([]() {return analogRead(AIRSPEED_PIN) * (Vcc / 1023);}, 20);
     Serial.println(F("Done zeroing airspeed sensor"));
@@ -231,7 +241,8 @@ void loop(){
     Serial.println(F("Zeroing the voltage sensor"));
     ZERO_VOLTAGE = zero_analog([]() {return analogRead(VOLTAGE_PIN) * (Vcc / 1023);}, 40);
     Serial.println(F("Done zeroing voltage sensor"));
-    zero_thrust = false;
+    
+    zero_analog_sensors = false;
     ready = true;
   }
 
@@ -241,7 +252,8 @@ void loop(){
     data_file.println("Current (A), Voltage (V), Torque (N.mm), Thrust (N), RPM, Airspeed (m/s)"); //set up csv headers
     new_file_created = false;
   }
-  else if(marker_sent){
+
+  if(marker_sent){
     MARKERS = signal.toInt();
     marker_sent = false;
   }
@@ -260,7 +272,7 @@ void loop(){
         int current_value_in = analogRead(CURRENT_PIN);
         int voltage_value_in = analogRead(VOLTAGE_PIN);          
 
-        float voltage = 21 * voltage_value_in * (Vcc / 1023.0);
+        float voltage = 21 * ((voltage_value_in * (Vcc / 1023.0)) - ZERO_VOLTAGE);
 
         float current_voltage = current_value_in * (Vcc / 1023.0);
         float current = (current_voltage - ZERO_CURRENT_VOLTAGE) / CURRENT_SENSITIVITY;

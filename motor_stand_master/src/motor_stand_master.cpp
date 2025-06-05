@@ -238,6 +238,7 @@ void loop() {
               }
               tare_index++;
               tare_ui();
+              sending = false;
             }
             else if(tare_index == 1){
               send_parameters("r", tare_values[tare_index]); //tell slave to tare thrust
@@ -248,10 +249,24 @@ void loop() {
                 }
                 delay(100);
               }
+              tare_index++;
+              send_ui();
+            }
+            else if(tare_index == 2){ //tell slave to tare analog sensors
+              Wire.beginTransmission(9);
+              Wire.write('a');
+              Wire.endTransmission();
+              while(1){
+                Wire.requestFrom(9, 1);
+                if(Wire.read() == 1){
+                  break;
+                }
+                delay(100);
+              }
               lcd_home();
               tared = true;
+              sending = false;
             }
-            sending = false;
           }
         }
       }
