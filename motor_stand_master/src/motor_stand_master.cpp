@@ -23,7 +23,12 @@ void tare_ui(){
   lcd.setCursor(0, 2);
   lcd.print("NEXT: " +  String(ENTER_INPUT) + "             ");
   lcd.setCursor(0, 3);
-  lcd.print("THROTTLE:OFF");
+  if(tare_index == 0){
+    lcd.print("UNITS: N.m");
+  }
+  else{
+    lcd.print("UNITS: kg");
+  }
   lcd.setCursor(0, 1);
 }
 
@@ -38,6 +43,7 @@ void send_ui(){
 
 void send_parameters(String type, String value){
   String signal = type + value;
+  Serial.println("SENDING: " + signal);
   Wire.beginTransmission(9);
   Wire.write(signal.c_str());
   Wire.endTransmission();
@@ -168,7 +174,9 @@ void setup() {
   Serial.println("READY");
 
   if(!tared){
+    lcd.setCursor(0, 0);
     lcd.print("USE PREVIOUS TARE?");
+    lcd.setCursor(0, 3);
     lcd.print("YES: A | NO: B");
     tare_index = 0;
     tared = false;
@@ -200,12 +208,13 @@ void loop() {
           }
         }
         else{
-          if(key == BACK_BUTTON && tare_index > 0){
+          if(key == BACK_BUTTON){
             tare_ui();
+            sending = false;
           }
           else if(key == SEND_INPUT){ //the button to zero the values
             lcd.setCursor(0, 1);
-            lcd.println("CALIBRATING...");
+            lcd.print("CALIBRATING...");
             if(tare_index == 0){
               send_parameters("q", tare_values[tare_index]); //tell slave to tare torque
               delay(2500);
@@ -227,8 +236,10 @@ void loop() {
           Wire.beginTransmission(9);
           Wire.write('p');
           Wire.endTransmission();
+          delay(100);
           choosing = false;
-          tare_ui();
+          tared = true;
+          lcd_home();
         }
         else if(key == 'B'){
           choosing = false;

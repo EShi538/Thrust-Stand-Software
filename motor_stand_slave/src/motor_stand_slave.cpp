@@ -85,8 +85,9 @@ void calibrate_hx711(HX711_ADC& load_cell, float known, int address){
     }
   }
   average_raw = average_raw / samples;
-  load_cell.setCalFactor(average_raw / known);
-  EEPROM.put(average_raw, address);
+  float cal_factor = average_raw / known;
+  load_cell.setCalFactor(cal_factor);
+  EEPROM.put(address, cal_factor);
 }
 
 // Initializes Load Cell
@@ -171,19 +172,25 @@ void setup(){
 void loop(){
   if(use_prev_calibration){
     Serial.println(F("Retrieving calibration factors"));
+
     float torque_calibration_factor;
     EEPROM.get(0, torque_calibration_factor);
     TorqueSensor.setCalFactor(torque_calibration_factor);
+    Serial.print(F("Torque: "));
+    Serial.println(String(torque_calibration_factor));
 
     float thrust_calibration_factor;
     EEPROM.get(10, thrust_calibration_factor);
     ThrustSensor.setCalFactor(thrust_calibration_factor);
-    Serial.println(F("Done retrieving calibration factors"));
+    Serial.print(F("Thrust: "));
+    Serial.println(String(thrust_calibration_factor));
 
+    Serial.println(F("Done retrieving calibration factors"));
     use_prev_calibration = false;
   }
 
   if(zero_torque){
+    KNOWN_TORQUE = signal.toInt();
     Serial.println(F("Calibrating torque sensor"));
     calibrate_hx711(TorqueSensor, KNOWN_TORQUE, 0);
     Serial.println(F("Done calibrating torque sensor"));
@@ -191,6 +198,7 @@ void loop(){
   }
 
   if(zero_thrust){
+    KNOWN_THRUST = signal.toInt();
     Serial.println(F("Calibrating thrust sensor"));
     calibrate_hx711(ThrustSensor, KNOWN_THRUST, 10);
     Serial.println(F("Done Calibrating thrust sensor"));
