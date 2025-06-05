@@ -39,7 +39,7 @@ HX711_ADC TorqueSensor(TORQUE_DOUT_PIN, TORQUE_SCK_PIN);
 //RPM/TACHOMETER SENSOR DEFINITIONS
 
 const int RPM_PIN = 2;
-float MARKERS = 1;
+float MARKERS;
 float RPM;
 float objects;
 long prev_second;
@@ -60,7 +60,7 @@ float measurements[5] = {0, 0, 0, 0, 0};
 // TIMING VARIABLE DEFINITIONS (FOR TRACKING)
 
 const int SERIAL_PRINT_INTERVAL = 100;      // interval between each printed value to not overload the serial monitor
-unsigned long last_serial_timestamp = 0;
+unsigned long last_serial_timestamp;
 bool ready;
 
 ///////////////////////////////////////////////////////////////////////////////////////

@@ -141,6 +141,7 @@ void setup(){
   zero_thrust = false;
   RPM = 0;
   ready = false;
+  last_serial_timestamp = 0;
   for(int i = 0; i < 5; i++){
     measurements[i] = 0;
   }
