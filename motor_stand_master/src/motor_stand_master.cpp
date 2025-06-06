@@ -36,6 +36,10 @@ void send_ui(){
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("PRESS " + String(SEND_INPUT) + " TO TARE");
+  if(tare_index == 2){
+    lcd.setCursor(0, 1);
+    lcd.print("ANALOG SENSORS");
+  }
   lcd.setCursor(0, 3);
   lcd.print("BACK: " + String(BACK_BUTTON));
   lcd.setCursor(0, 1);
@@ -130,14 +134,20 @@ void send_inputs(){
   send_parameters("f", parameter_values[0]);
   delay(100);
 
-  MAX_THROTTLE = min(max(parameter_values[1].toInt(), 1000), 2000);
+  int max_throttle_input = min(max(parameter_values[1].toInt(), 0), 100);
+  MAX_THROTTLE = map(max_throttle_input, 0, 100, 1000, 2000);
 
-  throttleIncrement = parameter_values[2].toInt();
+  throttleIncrement = min(parameter_values[2].toInt(), 100);
   pwm_increment = map(throttleIncrement, 0, 100, 0, MAX_THROTTLE - MIN_THROTTLE); //1% -> 99% written in terms of PWM cycle length, assuming a linear mapping
-
-  send_parameters("m", parameter_values[3]);
   
+  send_parameters("m", parameter_values[3]);
+
+  INCREMENT_TIME = parameter_values[4].toInt() * 1000;
   Serial.println("TEST PARAMETERS CONFIRMED");
+  Serial.println("MAX THROTTLE" + String(MAX_THROTTLE));
+  Serial.println("INCREMENT" + String(pwm_increment));
+  Serial.println("INCREMENT TIME" + String(INCREMENT_TIME));
+
   start_testing();
 }
 
@@ -184,19 +194,13 @@ void setup() {
     delay(100);
   }
 
-  if(!tared){
-    lcd.setCursor(0, 0);
-    lcd.print("USE PREVIOUS TARE?");
-    lcd.setCursor(0, 3);
-    lcd.print("YES: A | NO: B");
-    tare_index = 0;
-    tared = false;
-    sending = false;
-    choosing = true;
-  }
-  else{
-    lcd_home();
-  }
+  lcd.setCursor(0, 0);
+  lcd.print("USE PREVIOUS TARE?");
+  lcd.setCursor(0, 3);
+  lcd.print("YES: A | NO: B");
+  choosing = true;
+  tared = false;
+
   Serial.println("READY");
 }
 
@@ -220,7 +224,7 @@ void loop() {
           }
         }
         else{
-          if(key == BACK_BUTTON){
+          if(key == BACK_BUTTON && tare_index != 2){
             tare_ui();
             sending = false;
           }
@@ -281,6 +285,8 @@ void loop() {
           lcd_home();
         }
         else if(key == 'B'){
+          tare_index = 0;
+          sending = false;
           choosing = false;
           tare_ui();
         }
@@ -308,31 +314,9 @@ void loop() {
         send_inputs();
       }
       else if(key >= '0' && key <= '9'){
-        switch(parameter_index){
-          case 0: //ENTERING TEST NUMBER/FILE INFO
-            if(input.length() < 3){ 
-              input += key;
-              lcd.print(key);
-            }
-            break;
-          case 1: //ENTERING MAX THROTTLE
-            if(input.length() < 4){ 
-              input += key;
-              lcd.print(key);
-            }
-            break;
-          case 2: //ENTERING INCREMENT
-            if(input.length() < 2){ 
-              input += key;
-              lcd.print(key);
-            }
-            break;
-          case 3: //ENTERING MARKERS
-            if(input.length() < 2){ 
-              input += key;
-              lcd.print(key);
-            }
-            break;
+        if(input.length() < 3){ 
+          input += key;
+          lcd.print(key);
         }
       }
     }

@@ -75,6 +75,7 @@ float zero_analog(float (*func)(), int address){
 }
 
 void calibrate_hx711(HX711_ADC& load_cell, float known, int address){
+  load_cell.setCalFactor(1);
   unsigned long start_time = millis();
   float average_raw = 0;
   float samples = 0;
@@ -151,7 +152,7 @@ void setup(){
 
   pinMode(RPM_PIN, INPUT);
   see_object = false;
-  attachInterrupt(digitalPinToInterrupt(RPM_PIN), count, FALLING);
+  attachInterrupt(digitalPinToInterrupt(RPM_PIN), count, CHANGE);
 
   //Initialize I2C protocol (slave)
   Wire.begin(9); //Slave arduino set to address 9
@@ -263,7 +264,7 @@ void loop(){
     if(reading_on){ //if a file exists and data logging/testing is turned on
       //RPM SENSOR READING AND CALCULATION; Can increase precision by adding more markers
       if(millis() >= prev_second + 1000){
-        RPM = (objects / MARKERS) * 60.0;
+        RPM = (objects / (MARKERS * 2)) * 60.0;
         objects = 0;
         prev_second = millis();
       }
@@ -273,7 +274,7 @@ void loop(){
         int current_value_in = analogRead(CURRENT_PIN);
         int voltage_value_in = analogRead(VOLTAGE_PIN);          
 
-        float voltage = 21 * ((voltage_value_in * (Vcc / 1023.0)) - ZERO_VOLTAGE);
+        float voltage = 19.16 * ((voltage_value_in * (Vcc / 1023.0)) - ZERO_VOLTAGE);
 
         float current_voltage = current_value_in * (Vcc / 1023.0);
         float current = (current_voltage - ZERO_CURRENT_VOLTAGE) / CURRENT_SENSITIVITY;
@@ -318,6 +319,7 @@ void loop(){
           Serial.print(F("| Thrust: ")); Serial.print(thrust_data);
           Serial.print(F(" | RPM: ")); Serial.print(RPM);
           Serial.print(F(" | AIRSPEED: ")); Serial.println(airspeed);
+          Serial.print(F(" | MEMORY: ")); Serial.println(free_memory());
 
           data_file.print(average_current); data_file.print(", "); 
           data_file.print(voltage); data_file.print(", ");
