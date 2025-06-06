@@ -83,6 +83,9 @@ void throttle_up(){
   else{
     if(millis() >= prev_interval_timestamp + INCREMENT_TIME){
       for(int i = cycle_length; i <= min(cycle_length + pwm_increment, MAX_THROTTLE); i++){
+        if(done_throttling){
+          return; //return to the main loop and throttle down
+        }
         esc.writeMicroseconds(i);
         delay(THROTTLE_UP_DELAY);
       }
@@ -105,15 +108,7 @@ void throttle_down(){
 }
 
 void interrupt(){
-  interrupted = true;
-}
-
-void check_interrupt(){
-  if(interrupted){
-    Serial.println("Manual Stop");
-    interrupted = false;
-    throttle_down();
-  }
+  done_throttling = true;
 }
 
 void setup_next_input(){
@@ -209,7 +204,6 @@ void setup() {
 }
 
 void loop() {
-  check_interrupt();
   char key = keypad.getKey();
   
   if(!tared){
