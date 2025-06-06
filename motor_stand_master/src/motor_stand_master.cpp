@@ -74,21 +74,25 @@ void end_testing(){
 }
 
 void throttle_up(){
-  if(millis() >= prev_interval_timestamp + INCREMENT_TIME && cycle_length >= MAX_THROTTLE){
-    Serial.println("DONE THROTTLING");
-    done_throttling = true;
-  }
-  else if(millis() >= prev_interval_timestamp + INCREMENT_TIME){
-    Serial.println(cycle_length);
-    lcd.setCursor(0, 3);
-    lcd.print("THROTTLE:" + String(currthrottle) + " ");
-    for(int i = cycle_length; i <= min(cycle_length + pwm_increment, MAX_THROTTLE); i++){
-      esc.writeMicroseconds(i);
-      delay(THROTTLE_UP_DELAY);
+  if(cycle_length >= MAX_THROTTLE){
+    if(millis() >= prev_interval_timestamp + INCREMENT_TIME){
+      Serial.println("DONE THROTTLING");
+      done_throttling = true;
     }
-    cycle_length = min(cycle_length + pwm_increment, MAX_THROTTLE);
-    currthrottle += throttleIncrement;
-    prev_interval_timestamp = millis();
+  }
+  else{
+    if(millis() >= prev_interval_timestamp + INCREMENT_TIME){
+      for(int i = cycle_length; i <= min(cycle_length + pwm_increment, MAX_THROTTLE); i++){
+        esc.writeMicroseconds(i);
+        delay(THROTTLE_UP_DELAY);
+      }
+      cycle_length = min(cycle_length + pwm_increment, MAX_THROTTLE);
+      currthrottle += throttleIncrement;
+      Serial.println(cycle_length);
+      lcd.setCursor(0, 3);
+      lcd.print("THROTTLE:" + String(currthrottle) + " ");
+      prev_interval_timestamp = millis();
+    }
   }
 }
 
