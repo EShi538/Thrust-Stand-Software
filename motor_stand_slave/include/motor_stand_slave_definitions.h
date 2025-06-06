@@ -43,7 +43,7 @@ float MARKERS;
 float RPM;
 float objects;
 unsigned long prev_second;
-bool see_object;
+volatile bool see_object;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // CURRENT AND VOLTAGE SENSOR DEFINITIONS

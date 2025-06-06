@@ -73,7 +73,7 @@ int pwm_increment;
 int cycle_length;
 
 bool start_motor; 
-bool done_throttling;
+volatile bool done_throttling;
 bool throttling_up;
 
 unsigned long prev_interval_timestamp;
@@ -82,4 +82,3 @@ unsigned long prev_interval_timestamp;
 //MANUAL OVERRIDE DEFINITIONS
 
 const int INTERRUPT_PIN = 2;
-bool interrupted;
