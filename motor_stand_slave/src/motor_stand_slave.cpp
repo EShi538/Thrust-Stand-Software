@@ -38,6 +38,12 @@ void receiveEvent(int bytes){
     stop = true;
     reading_on = false;
   }
+  else if(type == 'w'){ // PAUSE data collection
+    paused = true;
+  }
+  else if(type == 'g'){
+    paused = false;
+  }
 }
 
 void requestEvent(){
@@ -140,6 +146,7 @@ void setup(){
   marker_sent = false;
   zero_torque = false;
   zero_thrust = false;
+  paused = false;
   RPM = 0;
   ready = false;
   last_serial_timestamp = 0;
@@ -257,14 +264,15 @@ void loop(){
 
   if(marker_sent){
     MARKERS = signal.toInt();
+    Serial.println(String(MARKERS));
     marker_sent = false;
   }
 
   if(data_file){
     if(reading_on){ //if a file exists and data logging/testing is turned on
       //RPM SENSOR READING AND CALCULATION; Can increase precision by adding more markers
-      if(millis() >= prev_second + 1000){
-        RPM = (objects / (MARKERS * 2)) * 60.0;
+      if(millis() >= prev_second + 250){
+        RPM = (objects / (MARKERS * 2)) * 240.0;
         objects = 0;
         prev_second = millis();
       }
@@ -310,7 +318,7 @@ void loop(){
         float thrust_data = ThrustSensor.getData();  
 
         //RATE LIMIT THE WRITING TO AVOID OVERLOADING AND KEEP CONSISTENT DATAPOINTS
-        if(millis() > last_serial_timestamp + SERIAL_PRINT_INTERVAL){     
+        if(!paused && millis() > last_serial_timestamp + SERIAL_PRINT_INTERVAL){     
           last_serial_timestamp = millis();
 
           Serial.print(F("Current: ")); Serial.print(average_current);

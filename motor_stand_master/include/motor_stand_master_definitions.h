@@ -14,7 +14,7 @@ LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 20 chars
 
 
 const int PARAMETER_NUM = 5;
-const String parameter_names[] = {"TEST #:", "MAX THROTTLE (%):", "INCREMENT (%):", "MARKERS:", "INCREMENT LENGTH (s):"};
+const String parameter_names[] = {"TEST #:", "MAX THROTTLE (%):", "INCREMENT (%):", "MARKERS:", "INCR. LENGTH (s):"};
 String parameter_values[PARAMETER_NUM];
 int parameter_index;
 
@@ -73,6 +73,7 @@ int pwm_increment;
 int cycle_length;
 
 bool start_motor; 
+bool read_gradient;
 volatile bool done_throttling;
 bool throttling_up;
 

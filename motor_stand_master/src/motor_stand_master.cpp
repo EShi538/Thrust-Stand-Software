@@ -48,7 +48,6 @@ void send_ui(){
 void send_parameters(String type, String value){
   String signal = type + value;
   int length = signal.length();
-  Serial.println("SENDING: " + signal);
   Wire.beginTransmission(9);
   Wire.write(signal.c_str(), length);
   Wire.endTransmission();
@@ -82,12 +81,22 @@ void throttle_up(){
   }
   else{
     if(millis() >= prev_interval_timestamp + INCREMENT_TIME){
+      if(!read_gradient){
+        Wire.beginTransmission(9);
+        Wire.write('w');
+        Wire.endTransmission();
+      }
       for(int i = cycle_length; i <= min(cycle_length + pwm_increment, MAX_THROTTLE); i++){
         if(done_throttling){
           return; //return to the main loop and throttle down
         }
         esc.writeMicroseconds(i);
         delay(THROTTLE_UP_DELAY);
+      }
+      if(!read_gradient){
+        Wire.beginTransmission(9);
+        Wire.write('g');
+        Wire.endTransmission();
       }
       cycle_length = min(cycle_length + pwm_increment, MAX_THROTTLE);
       currthrottle += throttleIncrement;
@@ -100,6 +109,11 @@ void throttle_up(){
 }
 
 void throttle_down(){
+  if(!read_gradient){
+    Wire.beginTransmission(9);
+    Wire.write('w');
+    Wire.endTransmission();
+  }
   for(int i = cycle_length; i >= MIN_THROTTLE; i--){
     esc.writeMicroseconds(i);
     delay(THROTTLE_UP_DELAY);
@@ -108,13 +122,24 @@ void throttle_down(){
 }
 
 void interrupt(){
-  done_throttling = true;
+  if(start_motor){
+    done_throttling = true;
+  }
 }
 
 void setup_next_input(){
-  parameter_values[parameter_index] = input;
+  if(parameter_index < PARAMETER_NUM){
+    parameter_values[parameter_index] = input;
+  }
   parameter_index++;
-  if(parameter_index >= PARAMETER_NUM){
+  if(parameter_index == PARAMETER_NUM){
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("THROTTLE SMOOTHING?");
+    lcd.setCursor(0, 3);
+    lcd.print("YES: A | NO: B");
+  }
+  else if(parameter_index == PARAMETER_NUM + 1){
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("PRESS " + String(SEND_INPUT) + " TO START");
@@ -125,7 +150,7 @@ void setup_next_input(){
 }
 
 void setup_prev_input(){
-  parameter_index--;
+  parameter_index = min(parameter_index - 1, PARAMETER_NUM - 1);
   lcd_home();
 }
 
@@ -143,9 +168,6 @@ void send_inputs(){
 
   INCREMENT_TIME = parameter_values[4].toInt() * 1000;
   Serial.println("TEST PARAMETERS CONFIRMED");
-  Serial.println("MAX THROTTLE" + String(MAX_THROTTLE));
-  Serial.println("INCREMENT" + String(pwm_increment));
-  Serial.println("INCREMENT TIME" + String(INCREMENT_TIME));
 
   start_testing();
 }
@@ -167,7 +189,6 @@ void setup() {
   throttling_up = false;
   start_motor = false;
   cycle_length = MIN_THROTTLE;
-  interrupted = false;
   currthrottle = 0;
   
   // Set up the LCD display
@@ -280,6 +301,7 @@ void loop() {
           delay(100);
           choosing = false;
           tared = true;
+          parameter_index = 0;
           lcd_home();
         }
         else if(key == 'B'){
@@ -297,6 +319,7 @@ void loop() {
     }
 
     if(done_throttling){
+      Serial.println("THROTTLING DOWN");
       throttle_down();
     }
 
@@ -308,7 +331,17 @@ void loop() {
       else if(key == ENTER_INPUT && input != "" && parameter_index < PARAMETER_NUM){
         setup_next_input();
       }
-      else if(key == SEND_INPUT && parameter_index == PARAMETER_NUM){
+      else if(parameter_index == PARAMETER_NUM){
+        if(key == 'A'){
+          read_gradient = true;
+          setup_next_input();
+        }
+        else if(key == 'B'){
+          read_gradient = false;
+          setup_next_input();
+        }
+      }
+      else if(key == SEND_INPUT && parameter_index == PARAMETER_NUM + 1){
         send_inputs();
       }
       else if(key >= '0' && key <= '9'){
