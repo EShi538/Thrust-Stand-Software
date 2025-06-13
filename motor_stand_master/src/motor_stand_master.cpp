@@ -40,8 +40,10 @@ void send_ui(){
     lcd.setCursor(0, 1);
     lcd.print("ANALOG SENSORS");
   }
-  lcd.setCursor(0, 3);
-  lcd.print("BACK: " + String(BACK_BUTTON));
+  if(tare_index != 2){
+    lcd.setCursor(0, 3);
+    lcd.print("BACK: " + String(BACK_BUTTON));
+  }
   lcd.setCursor(0, 1);
 }
 
@@ -54,15 +56,20 @@ void send_parameters(String type, String value){
 }
 
 void start_testing(){
-  lcd.setCursor(0, 0);
-  lcd.print("                    ");
-  lcd.setCursor(0, 0);
+  lcd.clear();
   lcd.print("RUNNING TEST");
+  lcd.setCursor(0, 1);
+  lcd.print("TEST #: " + parameter_values[0]);
+  lcd.setCursor(0, 2);
+  lcd.print("INCR. LENGTH: " + parameter_values[4] + " s");
+  lcd.setCursor(0, 3);
+  lcd.print("THROTTLE:0");
   Serial.println("Starting: Test Num: " + parameter_values[0] + " | Increment: " + String(throttleIncrement));
   start_motor = true;
   Wire.beginTransmission(9);
   Wire.write('b');
   Wire.endTransmission();
+  prev_interval_timestamp = millis();
 }
 
 void end_testing(){
@@ -86,23 +93,22 @@ void throttle_up(){
         Wire.write('w');
         Wire.endTransmission();
       }
-      for(int i = cycle_length; i <= min(cycle_length + pwm_increment, MAX_THROTTLE); i++){
+      int next_cycle_length = min(cycle_length + pwm_increment, MAX_THROTTLE);
+      for(; cycle_length <= next_cycle_length; cycle_length++){
         if(done_throttling){
           return; //return to the main loop and throttle down
         }
-        esc.writeMicroseconds(i);
+        esc.writeMicroseconds(cycle_length);
+        lcd.setCursor(9, 3);
+        lcd.print(String(map(cycle_length, 1000, 2000, 0, 100)));
         delay(THROTTLE_UP_DELAY);
       }
+      cycle_length--;
       if(!read_gradient){
         Wire.beginTransmission(9);
         Wire.write('g');
         Wire.endTransmission();
       }
-      cycle_length = min(cycle_length + pwm_increment, MAX_THROTTLE);
-      currthrottle += throttleIncrement;
-      Serial.println(cycle_length);
-      lcd.setCursor(0, 3);
-      lcd.print("THROTTLE:" + String(currthrottle) + " ");
       prev_interval_timestamp = millis();
     }
   }
@@ -116,8 +122,20 @@ void throttle_down(){
   }
   for(int i = cycle_length; i >= MIN_THROTTLE; i--){
     esc.writeMicroseconds(i);
+    int throttle = map(i, 1000, 2000, 0, 100);
+    if(throttle == 99){
+      lcd.setCursor(11, 3);
+      lcd.print(" ");
+    }
+    if(throttle == 9){
+      lcd.setCursor(10, 3);
+      lcd.print(" ");
+    }
+    lcd.setCursor(9, 3);
+    lcd.print(String(throttle));
     delay(THROTTLE_UP_DELAY);
   }
+  delay(INCREMENT_TIME);
   end_testing();
 }
 
@@ -135,7 +153,7 @@ void setup_next_input(){
   if(parameter_index == PARAMETER_NUM){
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("THROTTLE SMOOTHING?");
+    lcd.print("SMOOTH DATA?");
     lcd.setCursor(0, 3);
     lcd.print("YES: A | NO: B");
   }
@@ -161,8 +179,8 @@ void send_inputs(){
   int max_throttle_input = min(max(parameter_values[1].toInt(), 0), 100);
   MAX_THROTTLE = map(max_throttle_input, 0, 100, 1000, 2000);
 
-  throttleIncrement = min(parameter_values[2].toInt(), 100);
-  pwm_increment = map(throttleIncrement, 0, 100, 0, MAX_THROTTLE - MIN_THROTTLE); //1% -> 99% written in terms of PWM cycle length, assuming a linear mapping
+  throttleIncrement = min(parameter_values[2].toInt(), max_throttle_input);
+  pwm_increment = map(throttleIncrement, 0, 100, 0, 1000); //1% -> 99% written in terms of PWM cycle length, assuming a linear mapping
   
   send_parameters("m", parameter_values[3]);
 
@@ -189,7 +207,6 @@ void setup() {
   throttling_up = false;
   start_motor = false;
   cycle_length = MIN_THROTTLE;
-  currthrottle = 0;
   
   // Set up the LCD display
   lcd.init();

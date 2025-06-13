@@ -68,7 +68,6 @@ int INCREMENT_TIME;
 const int THROTTLE_UP_DELAY = 10;
 
 int throttleIncrement;
-int currthrottle;
 int pwm_increment;
 int cycle_length;
 

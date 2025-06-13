@@ -282,7 +282,7 @@ void loop(){
         int current_value_in = analogRead(CURRENT_PIN);
         int voltage_value_in = analogRead(VOLTAGE_PIN);          
 
-        float voltage = 19.16 * ((voltage_value_in * (Vcc / 1023.0)) - ZERO_VOLTAGE);
+        float voltage = VOLTAGE_CALIBRATION * ((voltage_value_in * (Vcc / 1023.0)) - ZERO_VOLTAGE);
 
         float current_voltage = current_value_in * (Vcc / 1023.0);
         float current = (current_voltage - ZERO_CURRENT_VOLTAGE) / CURRENT_SENSITIVITY;
